@@ -1,14 +1,29 @@
 import './App.css';
+import {AuctionPage} from "./components/auctionpage";
+import {SubmitPage} from "./components/submitPage";
+import {useState} from "react";
+import {AllAuctionsPage} from "./components/allAuctionsPage";
+import {TopBar} from "./components/topBar";
+
+function getPage(index) {
+    switch (index) {
+        case 0: return <AllAuctionsPage/>
+        case 1: return <AllAuctionsPage/>
+        case 2: return <AuctionPage/>
+        case 3: return <SubmitPage/>
+        default: return <div/>
+    }
+}
 
 function App() {
-  return (
-    <div className="App  text-center">
-    {/* Delete the two lines below */}
-    <h1 className="text-4xl font-bold pt-20">This is a starter template for you!</h1>
-    <h1 className="text-2xl font-bold pt-10">All the best with your React + Tailwind project! 😃</h1>
-    <a href="https://github.com/tanmayhinge/react-tailwind-template" target="_blank" rel="noreferrer" className="text-blue-500 underline">Read Documentation for this Template</a>
-    </div>
-  );
+    const [currentPage, setCurrentPage] = useState(0);
+
+    return (
+        <div className="App">
+            <TopBar onPageChange={(index) => setCurrentPage(index)}/>
+            {getPage(currentPage)}
+        </div>
+    );
 }
 
 export default App;
