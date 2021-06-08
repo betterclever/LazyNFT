@@ -1,4 +1,4 @@
-import {AccountSection} from "./auctionpage";
+import {AccountSection} from "./accountSection";
 
 export function TopBarNavItem({label, onClick}) {
     return <div onClick={onClick}
