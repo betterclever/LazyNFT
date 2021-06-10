@@ -1,0 +1,447 @@
+scilla_version 0
+
+(* Contract to facilitate bonding curve distribution based auctions of any NFT collection using the ZRC-1 standard *)
+
+import BoolUtils PairUtils ListUtils
+library ZRC1Auctions
+
+let one_msg =
+  fun (msg : Message) =>
+    let nil_msg = Nil {Message} in
+    Cons {Message} msg nil_msg
+
+
+let zero = Uint256 0
+let one = Uint256 1
+let hundred = Uint128 100
+let true = True
+
+let build_pair =
+  fun (collection_id : Uint256) =>
+  fun (nft_url : String) =>
+    Pair {Uint256 String} collection_id nft_url
+
+
+let build_token_owner_pair =
+  fun (owner: ByStr20) =>
+  fun (token_id: Uint256) =>
+    Pair {ByStr20 Uint256} owner token_id
+
+type TransferMessageData =
+(*  Parameters: (token_contract_address, token_id, auction_duration, bonding_curve_factor)  *)
+| TransferMessageData of ByStr20 String Uint128 Uint256
+
+
+let build_message_transfer_from =
+  fun (token_contract_address: ByStr20) =>
+  fun (recipient_address: ByStr20) =>
+  fun (token_id: Uint256) =>
+    { _tag : "TransferFrom";
+      _recipient : token_contract_address;
+      _amount : Uint128 0;
+      to : recipient_address;
+      token_id : token_id
+    }
+
+let build_message_transfer =
+  fun (token_contract_address: ByStr20) =>
+  fun (recipient_address: ByStr20) =>
+  fun (token_id: Uint256) =>
+      { _tag : "Transfer";
+      _recipient : token_contract_address;
+      _amount : Uint128 0;
+      to : recipient_address;
+      token_id : token_id
+  }
+
+let nft_id_filter =
+    fun (nft_id_to_remove: Uint256) =>
+    fun (iter_nft_id: Uint256) =>
+        let x = builtin eq nft_id_to_remove iter_nft_id in
+        match x with
+          | True => False
+          | False => True
+        end
+
+
+type Error =
+  | CodeImpossibleBranch
+  | CodeAuctionOngoing
+  | CodeItemAlreadyAuctioned
+  | CodeBidTooLow
+  | CodeAuctionNotStartedYet
+  | CodeAuctionFinished
+  | CodeAuctionNotOngoing
+  | CodeNoSuchCollection
+  | CodeOutOfBounds
+  | CodeInvalidEntryPrice
+  | CodeSenderNotParticipant
+  | CodeNFTAlreadyClaimed
+  | CodeCastFailed
+  | CodeCouldNotAssignToken
+
+
+let make_error =
+  fun (result : Error) =>
+    let result_code =
+      match result with
+      | CodeImpossibleBranch                 => Int32 -1
+      | CodeAuctionOngoing                   => Int32 -2
+      | CodeItemAlreadyAuctioned             => Int32 -3
+      | CodeBidTooLow                        => Int32 -4
+      | CodeAuctionNotStartedYet             => Int32 -5
+      | CodeAuctionFinished                  => Int32 -6
+      | CodeAuctionNotOngoing                => Int32 -7
+      | CodeNoSuchCollection                 => Int32 -8
+      | CodeOutOfBounds                      => Int32 -9
+      | CodeInvalidEntryPrice                => Int32 -10
+      | CodeSenderNotParticipant             => Int32 -11
+      | CodeNFTAlreadyClaimed                => Int32 -11
+      | CodeCastFailed                       => Int32 -12
+      | CodeCouldNotAssignToken              => Int32 -13
+      end
+    in
+    { _exception : "Error"; code : result_code }
+
+
+(*type CollectionData =*)
+(*(*  Parameters: (minter, name, auction_duration, bonding_curve_factor)  *)*)
+(*| CollectionData of ByStr20 String Uint128 Uint256*)
+
+contract ZRC1Auctions()
+
+field collection_count: Uint256 = zero
+(* Address of the contract of the NFTs being referred to this collection *)
+field collection_address: Map Uint256 ByStr20 = Emp Uint256 ByStr20
+
+(* The owner of collection who must get the purchase amounts *)
+field collection_owners: Map Uint256 ByStr20 = Emp Uint256 ByStr20
+
+field collection_auction_endblock: Map Uint256 BNum = Emp Uint256 BNum
+
+(* Everyone who has taken part in the NFT sale for a particular collection, Bool represents if they have claimed yet or not *)
+field collection_participants: Map Uint256 (Map ByStr20 Bool) = Emp Uint256 (Map ByStr20 Bool)
+
+field collection_participant_count: Map Uint256 Uint32 = Emp Uint256 Uint32
+
+(* All the NFTs that are associated to this collection *)
+field collection_tokens: Map Uint256 List Uint256 = Emp Uint256 List Uint256
+
+(* All the NFT tokens in the collection which are yet to be claimed by a person *)
+field collection_unclaimed_tokens: Map Uint256 List Uint256 = Emp Uint256 List Uint256
+
+(* Map of collection id to number of tokens to distribute by that price to the price *)
+(* field collection_price_distribution: Map Uint256 (List (Pair Uint256 Uint128)) = Emp Uint256 (List (Pair Uint256 Uint128)) *)
+field collection_entry_prices: Map Uint256 (List Uint128) = Emp Uint256 (List Uint128)
+
+(*procedure StoreOwnerAddress(token_owner: Pair Uint256 ByStr20)*)
+(*  token_id = let fst_uint32 = @fst Uint256 ByStr20 in fst_uint32 token_owner;*)
+(*  owner = let snd_bystr20 = @snd Uint256 ByStr20 in snd_string_bystr20 token_owner;*)
+(*    *)
+(*  collection*)
+(*  *)
+(*end*)
+
+procedure ThrowError(err: Error)
+  e = make_error err;
+  throw e
+end
+
+
+procedure ValidateAuctionOngoing(
+  collection_id: Uint256,
+  current_block: BNum
+)
+  x <- collection_auction_endblock[collection_id];
+  match x with
+    | Some endblock =>
+      y = builtin blt current_block endblock;
+      match y with
+        | True =>
+        | False =>
+          err = CodeAuctionFinished;
+          ThrowError err
+      end
+    | None =>
+      err = CodeNoSuchCollection;
+      ThrowError err
+  end
+end
+
+procedure ValidateAuctionEnded(
+  collection_id: Uint256,
+  current_block: BNum
+)
+  x <- collection_auction_endblock[collection_id];
+  match x with
+    | Some endblock =>
+      y = builtin blt endblock current_block;
+      match y with
+        | True =>
+        | False =>
+          err = CodeAuctionOngoing;
+          ThrowError err
+      end
+    | None =>
+      err = CodeNoSuchCollection;
+      ThrowError err
+  end
+end
+
+procedure ValidateParticipant(
+    collection_id: Uint256,
+    address: ByStr20
+)
+  x <- collection_participants[collection_id][address];
+  match x with
+    | Some b =>
+        match b with
+        | True =>
+            err = CodeNFTAlreadyClaimed;
+            ThrowError err
+        | False =>
+        end
+    | None =>
+    err = CodeSenderNotParticipant;
+    ThrowError err
+  end
+end
+
+procedure TransferNFTOwnership(
+    collection_id: Uint256,
+    token_id: Uint256,
+    receiver_addresss: ByStr20
+)
+    option_token_contract <- collection_address[collection_id];
+    match option_token_contract with
+    | Some contract_address =>
+        msg = build_message_transfer contract_address receiver_addresss token_id;
+        msgs = one_msg msg;
+        send msgs
+    | None =>
+        err = CodeNoSuchCollection;
+        ThrowError err
+    end
+end
+
+
+procedure AssignAndSendRandomNFT(
+    collection_id: Uint256,
+    blocknumber: BNum,
+    auction_end_block: BNum,
+    participant_address: ByStr20
+)
+    option_unclaimed_tokens <- collection_unclaimed_tokens[collection_id];
+    match option_unclaimed_tokens with
+        | Some unclaimed_tokens =>
+            f = @list_length Uint256;
+            total_unclaimed_token = f unclaimed_tokens;
+            diff_block_number = builtin bsub blocknumber auction_end_block;
+            u32_dbn = builtin to_uint32 diff_block_number;
+            match u32_dbn with
+                | None =>
+                    err = CodeCastFailed;
+                    ThrowError err
+                | Some b_diff =>
+                    rem_result = builtin rem b_diff total_unclaimed_token;
+                    f_nth = @list_nth Uint256;
+                    option_assigned_token_id = f_nth rem_result unclaimed_tokens;
+
+                    ev = { _eventname : "LogOptionAssignedToken"; assigned_token: option_assigned_token_id };
+                    event ev;
+                    (* Remove this NFT from the unclaimed_tokens_list *)
+                    match option_assigned_token_id with
+                      | Some assigned_token_id =>
+                        nft_id_removed = @list_filter Uint256;
+                        filter_func = nft_id_filter assigned_token_id;
+                        filtered_list = nft_id_removed filter_func unclaimed_tokens;
+                        collection_unclaimed_tokens[collection_id] := filtered_list;
+
+                        (* Transfer NFT ownership to the participant address *)
+                        TransferNFTOwnership collection_id assigned_token_id participant_address
+                      | None =>
+                        err = CodeCouldNotAssignToken;
+                        ThrowError err
+                    end
+            end
+        | None =>
+        err = CodeNoSuchCollection;
+        ThrowError err
+    end
+end
+
+
+procedure ValidateEntryPrice(
+    collection_id: Uint256,
+    amount: Uint128
+)
+(* statements go below *)
+    option_participant_count <- collection_participant_count[collection_id];
+    match option_participant_count with
+    | Some participant_count =>
+      one_32 = Uint32 1;
+      current_entry_count = builtin add participant_count one_32;
+      option_collection_prices <- collection_entry_prices[collection_id];
+
+      e = { _eventname : "LogCurrentEntry"; entry_count: current_entry_count};
+      event e;
+
+      match option_collection_prices with
+        | Some collection_prices =>
+            nth = @list_nth Uint128;
+            option_current_entry_price = nth participant_count collection_prices;
+
+            ev = { _eventname : "LogCurrentEntryPrice"; cep: option_current_entry_price; prices: collection_prices };
+            event ev;
+
+            match option_current_entry_price with
+              | Some current_entry_price =>
+                  is_equal = builtin eq amount current_entry_price;
+                  match is_equal with
+                  | True =>
+                  | False =>
+                      err = CodeInvalidEntryPrice;
+                      ThrowError err
+                  end
+              | None =>
+                  err = CodeOutOfBounds;
+                  ThrowError err
+            end
+        | None =>
+            err = CodeNoSuchCollection;
+            ThrowError err
+      end
+    | None =>
+        err = CodeNoSuchCollection;
+        ThrowError err
+    end
+end
+
+
+transition StartAuction(
+  token_contract: ByStr20,
+  token_list: List Uint256,
+  auction_block_count: Uint128,
+  entry_prices: List Uint128
+)
+(* Step 1: Transfer token ownership from _sender to the contract *)
+
+  token_contract_address = token_contract;
+  nft_message = @list_map Uint256 Message;
+  tmp_fun = build_message_transfer_from token_contract_address;
+  tmp_fun_2 = tmp_fun _this_address;
+
+  msgs = nft_message tmp_fun_2 token_list;
+  send msgs;
+
+(* Step 2: Create collection *)
+
+  current_collection_count <- collection_count;
+  new_collection_count = builtin add current_collection_count one;
+
+  new_collection_id = new_collection_count;
+
+(* Step 2: Record the owner of collection i.e. _sender  *)
+
+  blocknumber <- & BLOCKNUMBER;
+  endblock = builtin badd blocknumber auction_block_count;
+
+(* Step 3: Add the relevant collection distribution properties for the auction*)
+  emp_map = Emp ByStr20 Bool;
+  zero_32 = Uint32 0;
+
+  collection_count := new_collection_count;
+  collection_address[new_collection_id] := token_contract;
+  collection_owners[new_collection_id] := _sender;
+  collection_auction_endblock[new_collection_id] := endblock;
+  collection_participants[new_collection_id] := emp_map;
+  collection_participant_count[new_collection_id] := zero_32;
+  collection_tokens[new_collection_id] := token_list;
+  collection_unclaimed_tokens[new_collection_id] := token_list;
+  collection_entry_prices[new_collection_id] := entry_prices;
+
+  accept;
+(* Step 4: Emit successful event *)
+  msg_to_sender = { _tag : "StartAuctionSuccess"; _recipient : _sender; _amount : Uint128 0; collection_id: new_collection_id };
+  msgs = one_msg msg_to_sender;
+  send msgs
+end
+
+transition RecipientAcceptTransferFrom(
+  from: ByStr20,
+  recipient: ByStr20,
+  token_id: Uint256
+)
+  accept
+end
+
+transition RecipientAcceptTransfer(
+  from: ByStr20,
+  recipient: ByStr20,
+  token_id: Uint256
+)
+  accept
+end
+
+
+transition TransferFromSuccessCallBack(
+  from: ByStr20,
+  recipient: ByStr20,
+  token_id: Uint256
+)
+  accept
+end
+
+transition TransferSuccessCallBack(
+  from: ByStr20,
+  recipient: ByStr20,
+  token_id: Uint256
+)
+  accept
+end
+
+
+
+
+transition EnterAuction(collection_id: Uint256)
+(* Step 1: Validate if the auction is ongoing *)
+  current_block <- & BLOCKNUMBER;
+  ValidateAuctionOngoing collection_id current_block;
+(* Step 2: Validate if the _amount is greater than what is required for entry at this point, i.e. bonding curve distribution *)
+  ValidateEntryPrice collection_id _amount;
+(* Step 3: Accept amount *)
+  accept;
+  false = False;
+  collection_participants[collection_id][_sender] := false;
+  option_current_participant_count <- collection_participant_count[collection_id];
+  match option_current_participant_count with
+    | Some current_participant_count =>
+        one_32 = Uint32 1;
+        new_participant_count = builtin add current_participant_count one_32;
+        collection_participant_count[collection_id] := new_participant_count
+    | None =>
+        err = CodeNoSuchCollection;
+        ThrowError err
+  end
+end
+
+transition ClaimNFT(collection_id: Uint256)
+(* Step 1: Validate if the auction for token_id is ended*)
+  current_block <- & BLOCKNUMBER;
+  ValidateAuctionEnded collection_id current_block;
+(* Step 2: Validate if the _sender is part of the collection auction participants *)
+  ValidateParticipant collection_id _sender;
+(* Step 3: Assign a random NFT to the participant among the ones in the collection, remove it from available list *)
+(* Step 4: Transfer ownership of the NFT from contract to _sender *)
+  option_auction_endblock <- collection_auction_endblock[collection_id];
+  match option_auction_endblock with
+    | Some auction_endblock =>
+       AssignAndSendRandomNFT collection_id current_block auction_endblock _sender
+    | None =>
+        err = CodeNoSuchCollection;
+        ThrowError err
+  end
+
+(* Step 5: Transfer NFTs purchase price to the Owner of the collection *)
+end
+
