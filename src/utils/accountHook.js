@@ -1,4 +1,7 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
+import {accountAtom} from "./atoms";
+import {useAtom} from "jotai";
+import {zilSubscriptions} from "../index";
 
 export function tryGettingAccount() {
     if(typeof window.zilPay !== 'undefined') {
@@ -9,16 +12,23 @@ export function tryGettingAccount() {
 }
 
 export function useAccount() {
-    const [accountId, setAccountId] = useState(null);
+    const [account, setAccount] = useAtom(accountAtom);
 
-    const account = tryGettingAccount();
-    console.log("acc id",accountId);
-    if(account !== null) {
-      console.log("acc base 16",account, 'accountId',accountId);
-      if(account.base16 !== accountId) setAccountId(account.base16)
-    }
+    const accountChangeListener = (account) => {
+        setAccount(account);
+    };
+
+    useEffect(() => {
+        zilSubscriptions.addAccountChangeListener(accountChangeListener)
+        return () => {
+            zilSubscriptions.removeAccountChangeListener(accountChangeListener)
+        }
+    }, []);
+
     const connectWallet = async () => {
+        console.log('here');
         if((typeof window.zilPay !== 'undefined')) {
+            console.log('here 2');
             const zilPay = window.zilPay
             const wallet = zilPay.wallet
             console.log(wallet.defaultAccount)
@@ -26,23 +36,11 @@ export function useAccount() {
                 const accepted = await wallet.connect()
                 if(accepted) {
                     console.log(wallet.defaultAccount)
-                    setAccountId(wallet.defaultAccount.base16)
-                } else setAccountId(null)
-            } else setAccountId(wallet.defaultAccount.base16)
+                    setAccount(wallet.defaultAccount)
+                } else setAccount(null)
+            } else setAccount(wallet.defaultAccount)
         }
     }
 
-    // if((typeof window.zilPay !== 'undefined')) {
-    //     window.zilPay.wallet.observableAccount().subscribe((account) => {
-    //         console.log("account", account)
-    //         if(account) {
-    //             setAccountId(account)
-    //         } else setAccountId(null)
-    //     })
-    //     window.zilPay.wallet.observableNetwork().subscribe((net) => {
-    //         console.log("net", net)
-    //     })
-    // }
-
-    return [accountId, connectWallet];
+    return [account, connectWallet];
 }

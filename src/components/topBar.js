@@ -1,4 +1,5 @@
 import {AccountSection} from "./accountSection";
+import {getMinterAccess} from "../utils/contractOps";
 
 export function TopBarNavItem({label, onClick}) {
     return <div onClick={onClick}
@@ -14,6 +15,7 @@ export function TopBar({onPageChange}) {
             <TopBarNavItem label="Ongoing Auctions" onClick={() => onPageChange(1)}/>
             <TopBarNavItem label="Your Collection" onClick={() => onPageChange(2)}/>
             <TopBarNavItem label="Submit your own" onClick={() => onPageChange(3)}/>
+            <TopBarNavItem label="Testing" onClick={() => getMinterAccess()}/>
         </div>
         <div className="col-start-11 col-span-2">
             <AccountSection/>

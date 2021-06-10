@@ -10,6 +10,7 @@
     "@testing-library/user-event": "^12.6.0",
     "autoprefixer": "^9.8.6",
     "base64-arraybuffer": "^0.2.0",
+    "jotai": "^0.16.10",
     "nft.storage": "^2.0.0",
     "postcss": "^7.0.35",
     "react": "^17.0.1",
