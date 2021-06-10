@@ -2,6 +2,7 @@ import {useAccount} from "../utils/accountHook";
 
 export function AccountSection() {
     const [accountId, connectWallet] = useAccount();
+    console.log('ACCOUNT ID', accountId)
     return <div className="float-right mr-10">
         {accountId ?
             <div

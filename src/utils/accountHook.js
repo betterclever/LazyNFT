@@ -4,7 +4,7 @@ export function tryGettingAccount() {
     if(typeof window.zilPay !== 'undefined') {
         const zilPay = window.zilPay
         const wallet = zilPay.wallet
-        return wallet.isConnect === true ? wallet.defaultAccount.base16 : null;
+        return wallet.isConnect === true ? wallet.defaultAccount : null;
     } return null
 }
 
@@ -12,8 +12,11 @@ export function useAccount() {
     const [accountId, setAccountId] = useState(null);
 
     const account = tryGettingAccount();
-    if(account?.base16 !== accountId) setAccountId(account.base16)
-
+    console.log("acc id",accountId);
+    if(account !== null) {
+      console.log("acc base 16",account, 'accountId',accountId);
+      if(account.base16 !== accountId) setAccountId(account.base16)
+    }
     const connectWallet = async () => {
         if((typeof window.zilPay !== 'undefined')) {
             const zilPay = window.zilPay
