@@ -1,2 +1,2 @@
-# EasyNFT
-### Easy NFTs and Auctions on Zilliqa Blockchain
+# LazyNFT
+### Easy NFTs creation and Auctions for the lazy people on Zilliqa Blockchain
