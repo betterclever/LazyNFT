@@ -5,7 +5,6 @@ import { TopBar } from "./topBar";
 import { NFTStorage, File } from 'nft.storage';
 import Base64Binary from 'base64-arraybuffer';
 const client = new NFTStorage({ token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkaWQ6ZXRocjoweDg4NjUwNjA2NTAxZjA0Mjk4NTU3OTNlOThiMTJCRmI1M0E5Mjg3M2YiLCJpc3MiOiJuZnQtc3RvcmFnZSIsImlhdCI6MTYyMzIzNjYzOTYwOCwibmFtZSI6InppbG5mdEtleSJ9.j6ZrhwB1ZuxOzI32Ya-lV0tKtfI6vzsMCLizQrhXmkM'})
-const inputRef = createRef();
 
 window.xclient = client;
 
@@ -39,7 +38,7 @@ export function PreviewSection({ files }) {
   </div>
 }
 
-export function TextInputField({ fieldLabel, placeHolder = "" }) {
+export function TextInputField({ fieldLabel, placeHolder = "", type="text", onInputChange }) {
   return <div className="w-full px-3 mb-6 md:mb-0">
     <label className="block uppercase tracking-wide text-gray-700 text-s font-bold mb-2"
       htmlFor="grid-first-name">
@@ -47,7 +46,7 @@ export function TextInputField({ fieldLabel, placeHolder = "" }) {
     </label>
     <input
       className="appearance-none block w-full bg-gray-200 text-gray-700 border rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white"
-      id="grid-first-name" type="text" placeholder={placeHolder} />
+      id="grid-first-name" type={type} placeholder={placeHolder} onChange={(e)=>{if(onInputChange){onInputChange(e.target.value)}}}/>
     {/*<p className="text-red-500 text-xs italic">Please fill out this field.</p>*/}
   </div>
 }
@@ -63,45 +62,58 @@ export function FileUploadButton({ setFiles }) {
         d="M16.88 9.1A4 4 0 0 1 16 17H5a5 5 0 0 1-1-9.9V7a3 3 0 0 1 4.52-2.59A4.98 4.98 0 0 1 17 8c0 .38-.04.74-.12 1.1zM11 11h3l-4-4-4 4h3v3h2v-3z" />
     </svg>
     <span className="mt-1 text-base leading-normal">Select files</span>
-    <input ref={inputRef} type='file' accept="image/*" multiple="multiple" className="hidden" onInputCapture={onInputChange} />
+    <input type='file' accept="image/*" multiple="multiple" className="hidden" onInputCapture={onInputChange} />
   </label>
 }
 export function PriceDistribution(){
-    const[entries,setEntries]=useState([{}]);
-    function addEntry() {
-      let items=[...entries];
-      items.push({});
-      console.log(items);
-      setEntries(items)
+    const [itemCounter, setItemCounter] = useState(0);
+    const [items, setItems] = useState([]);
+    const addItem = () => {
+      const newItems = [...items, {
+        'key': itemCounter,
+        'units': 0,
+        'price': 0
+      }]
+      setItemCounter(itemCounter+1);
+      setItems(newItems);
     }
+
+    const deleteItem = (key) => {
+      const newItems = items.filter((i) => i.key !== key);
+      setItems(newItems);
+    }
+
     return  <div className="mt-4">
-                <div className="flex-row">
+                <div className="flex-row mb-5">
                   <span className="text-md font-bold ml-4 ">PRICE DISTRIBUTION</span>
                   <button
                     className="ml-5 rounded-full bg-gray-400 px-3 py-1"
-                    onClick={addEntry}>
+                    onClick={addItem}>
                     <span className="content-center w-full text-white font-bold h-1"> + </span>
                   </button>
                 </div>
-                {entries.map(entry=><PriceDistributionInput />)}
+                {items.map((i)=><PriceDistributionInput key={i.key} item={i} deleteEntry={()=>deleteItem(i.key)}/>)}
             </div>
 }
-export function PriceDistributionInput(){
-
-  return  <div className="mt-4">
-              <div className="grid grid-cols-10 flex-row" >
-                <div className="col-span-4"><TextInputField  placeHolder={"Units"} /></div>
-                <div className="col-span-4"><TextInputField  placeHolder={"Price"} /></div>
-                <div className="col-span-2"><button className="ml-5 rounded-full bg-gray-400 px-2 py-1 h1">
+export function PriceDistributionInput({deleteEntry, item}){
+  const onInputChange=(key,v)=>{
+    item[key]=v;
+    console.log(item);
+  }
+  return  <div className="mt-0">
+              <div className="grid grid-cols-10 align-middle" >
+                <div className="col-span-4"><TextInputField  placeHolder={"Units"} type="number" onInputChange={(value)=>onInputChange('units',value)}/></div>
+                <div className="col-span-4"><TextInputField  placeHolder={"Price"} type="number" onInputChange={(value)=>onInputChange('price',value)}/></div>
+                <div className="col-span-2 mt-2">
+                  <button className="ml-5 rounded-full bg-gray-400 px-4 py-2 " onClick={deleteEntry}>
                     <span className="content-center w-full text-white font-bold "> x </span>
-                </button>
+                  </button>
                 </div>
               </div>
           </div>
 }
 export function FormSection() {
   const [files, setFiles] = useState([]);
-
   function postImage(file) {
     return client.store({
       name: 'Test 2',
@@ -120,7 +132,12 @@ export function FormSection() {
   return <div className="grid grid-cols-12">
     <div className="col-span-4 flex flex-col mt-20 ml-10">
       <TextInputField fieldLabel="Collection Name" />
-      <TextInputField fieldLabel="Auction duration" placeHolder={"10:00"} />
+      <span className="text-md font-bold ml-4 ">AUCTION DURATION</span>
+      <div className="grid grid-cols-10 align-middle" >
+                <div className="col-span-2"><TextInputField  placeHolder={"in hrs"} /></div>
+                
+      </div>
+      
       <PriceDistribution/>
       <FileUploadButton setFiles={setFiles} />
       <button
