@@ -4,17 +4,21 @@ const {usingNFTContract} = require("./contractOps");
 
 export async function getAllCollections() {
     return await usingAuctionContract(async (contract, zilPay) => {
-        const state = contract.getState();
+        const state = await contract.getState();
         // const blockChainState = zilPay.blockchain.getBlock
-        const collectionInfo = new Map();
+        const collectionInfo = {};
         const bi = await zilPay.blockchain.getBlockChainInfo()
         const currentBlock = bi.result.CurrentMiniEpoch;
+
+        const utils = zilPay.utils;
 
         for (let i = 1; i <= state.collection_count; i++) {
             const endblock = state.collection_auction_endblock[i];
             collectionInfo[i] = {
                 name: state.collection_names[i],
-                entryPrices: state.collection_entry_prices[i],
+                entryPrices: state.collection_entry_prices[i].map((price) => {
+                    return utils.units.fromQa(new utils.BN(price), utils.units.Units.Zil)
+                }),
                 participants: state.collection_participants[i],
                 creator: state.collection_owners[i],
                 tokenIds: state.collection_tokens[i],
@@ -26,6 +30,13 @@ export async function getAllCollections() {
         }
         return collectionInfo;
     })
+}
+
+export async function getCollection(collection_id) {
+    const collections = await getAllCollections();
+    console.log('collections', collections);
+    console.log('collectionId', collection_id);
+    return collections[collection_id];
 }
 
 export async function getAllTokenUris() {

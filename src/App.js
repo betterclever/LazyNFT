@@ -17,7 +17,7 @@ function App() {
       <div>
         <TopBar />
         <Switch>
-          <Route path="/claim/:collectionId">
+          <Route path="/auctions/:collectionId">
             <AuctionPage />
           </Route>
           <Route path="/mintYourOwn">
