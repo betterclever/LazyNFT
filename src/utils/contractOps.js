@@ -1,7 +1,7 @@
 const {tryGettingAccount} = require("./accountHook");
 
 const NFT_CONTRACT_ADDRESS = "0xdf910808ff4595d1bf45cc5d62818c11530adb18";
-// const AUCTION_CONTRACT_ADDRESS = "0xc9a91af8625cbbe278804435a6479f9e70200334";
+const AUCTION_CONTRACT_ADDRESS = "0xe36379bfbe9d74f0415e756a2848006c135f8c75";
 
 
 export async function usingZilPay(func) {
@@ -27,7 +27,7 @@ async function usingNFTContract(func) {
 
 async function usingAuctionContract(func) {
     return await usingZilPay(async (zilpay) => {
-        const contract = zilpay.contracts.at(NFT_CONTRACT_ADDRESS);
+        const contract = zilpay.contracts.at(AUCTION_CONTRACT_ADDRESS);
         return await func(contract, zilpay);
     })
 }

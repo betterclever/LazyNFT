@@ -1,15 +1,11 @@
-import {useEffect, useState} from "react";
-import {checkIsMinter, getTransaction, mintTokens} from "../../utils/contractOps";
+import {useState} from "react";
+import {getTransaction, mintTokens, startAuction} from "../../utils/contractOps";
 import {nftStorageClient} from "../../utils/nftStorage";
 import {useInterval} from "../../hooks/useInterval";
 import {PriceDistribution} from "./priceDistribution";
 import {FileUploadButton} from "./fileUploadButton";
 import {TextInputField} from "./textInputField";
 import {PreviewSection} from "./previewSection";
-
-const UPLOAD_IPFS_STAGE = 1;
-const CREATE_AUCTION_STAGE = 3;
-const AUCTION_CREATED_STAGE = 4;
 
 const MINT_STAGE = {
     NOT_INITIATED: "NOT_INITIATED",
@@ -21,15 +17,50 @@ const MINT_STAGE = {
     FAILED: "FAILED"
 }
 
+const AUCTION_STAGE = {
+    NOT_STARTED: "NOT_STARTED",
+    VERIFYING_TRANSACTION: "VERIFYING_TRANSACTION",
+    WAITING_FOR_TRANSACTION_COMPLETION: "WAITING_FOR_TRANSACTION_COMPLETION",
+    COMPLETED: "COMPLETED",
+    FAILED: "FAILED"
+}
+
 export function FormSection() {
     const [files, setFiles] = useState([]);
+    const [tokenIds, setTokenIds] = useState([]);
     const [mintStage, setMintStage] = useState(MINT_STAGE.NOT_INITIATED);
+    const [auctionStage, setAuctionStage] = useState(AUCTION_STAGE.NOT_STARTED);
+    const [collectionName, setCollectionName] = useState("");
+    const [auctionDuration, setAuctionDuration] = useState(0);
+    const [collectionId, setCollectionId] = useState(null);
 
     const [mintTrx, setMintTrx] = useState({
         id: null,
         transaction: null,
         resultAwaited: false
     })
+
+    const [startAuctionTrx, setStartAuctionTrx] = useState({
+        id: null,
+        transaction: null,
+        resultAwaited: false
+    })
+
+    function getTokenIdsFromReceipt(receipt) {
+        const events =  receipt.event_logs;
+        const tokenIds = events.filter(e => e._eventname === "MintSuccess").map((e) => {
+            const params = e.params;
+            const tokenId = params.find(p => p.vname === 'token_id');
+            return tokenId.value
+        })
+        tokenIds.reverse();
+        console.log(tokenIds)
+        return tokenIds
+    }
+
+    function getCollectionId(receipt) {
+        return ""
+    }
 
     useInterval(async () => {
         if (mintTrx.resultAwaited === true && mintTrx.id !== null) {
@@ -45,13 +76,41 @@ export function FormSection() {
                     const success = receipt.success;
                     if(success) {
                         setMintStage(MINT_STAGE.COMPLETED);
+                        const nftIds = getTokenIdsFromReceipt(receipt);
+                        setTokenIds(nftIds);
                     } else {
                         setMintStage(MINT_STAGE.FAILED);
                     }
                 }
             } catch (ex) {
+                console.error(ex)
             }
         }
+
+        if(startAuctionTrx.resultAwaited === true && startAuctionTrx.id !== null) {
+            try {
+                const trx = await getTransaction(startAuctionTrx.id);
+                const receipt = trx?.receipt;
+                if (receipt !== undefined) {
+                    setStartAuctionTrx({
+                        id: mintTrx.id,
+                        transaction: trx,
+                        resultAwaited: false
+                    })
+                    const success = receipt.success;
+                    if(success) {
+                        setAuctionStage(AUCTION_STAGE.COMPLETED);
+                        const collectionId = getCollectionId(receipt);
+                        setCollectionId(collectionId);
+                    } else {
+                        setAuctionStage(AUCTION_STAGE.FAILED);
+                    }
+                }
+            } catch(e) {
+                console.error(e)
+            }
+        }
+
     }, 1000);
 
     function postImage(file) {
@@ -90,6 +149,24 @@ export function FormSection() {
         })
     }
 
+    async function startAuctionForCollection() {
+        if(!tokenIds.isEmpty()) {
+            const nftIds = tokenIds;
+            const distributionPrices = tokenIds.map(t => 1000);
+            const cName = collectionName;
+            // Auction time in block count
+            const auctionBlockCount = auctionDuration * 60 / 2;
+
+            setAuctionStage(AUCTION_STAGE.VERIFYING_TRANSACTION);
+            const trx = await startAuction(nftIds, distributionPrices, auctionBlockCount)
+            setAuctionStage(AUCTION_STAGE.WAITING_FOR_TRANSACTION_COMPLETION);
+            setStartAuctionTrx({
+                id: trx.ID,
+                resultAwaited: true
+            })
+        }
+    }
+
 
     return <div className="grid grid-cols-12">
         <div className="col-span-4 mt-20 ml-10 flex flex-col">
@@ -123,13 +200,13 @@ export function FormSection() {
             }
 
             <div className="mt-10"> Step: 2</div>
-            <TextInputField fieldLabel="Collection Name"/>
-            <div className="col-span-2"><TextInputField fieldLabel={"Auction Duration"} placeHolder={"in hrs"}/></div>
+            <TextInputField fieldLabel="Collection Name" onInputChange={(input) => setCollectionName(input)}/>
+            <TextInputField fieldLabel="Auction Duration" placeHolder={"in hrs"} onInputChange={(input) => setAuctionDuration(input)}/>
             <PriceDistribution/>
 
             <button
                 className="mt-6 mb-20 mx-4 align-middle bg-gradient-to-r from-green-400 to-blue-500 text-white font-bold py-2 px-4 rounded inline-flex items-center"
-                onClick={mintCollection}>
+                onClick={startAuctionForCollection}>
                 <span className="content-center w-full"> Start Auction </span>
             </button>
         </div>
