@@ -1,5 +1,5 @@
 import {useState} from "react";
-import {getTransaction, mintTokens, startAuction} from "../../utils/contractOps";
+import {getTransaction, mintTokens, startAuction} from "../../utils/contract/contractOps";
 import {nftStorageClient} from "../../utils/nftStorage";
 import {useInterval} from "../../hooks/useInterval";
 import {PriceDistribution} from "./priceDistribution";

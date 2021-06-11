@@ -1,6 +1,6 @@
 import {FormSection} from "./formSection";
 import {useEffect, useState} from "react";
-import {checkIsMinter, getMinterAccess, getTransaction} from "../../utils/contractOps";
+import {checkIsMinter, getMinterAccess, getTransaction} from "../../utils/contract/contractOps";
 import {useInterval} from "../../hooks/useInterval";
 
 export function ApplyMinter({recheckStatus}) {
