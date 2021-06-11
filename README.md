@@ -11,7 +11,7 @@ Consists of 2 contracts:
 : a fork of standard implementation of NonFungible Contract with slight modification to allow anyone to become a minter without owner approval
 
 [ZRC1 NFT Auctions](https://devex.zilliqa.com/address/0xd7c94c6ecef5fa22cd6fc1094c9023a56effb7d8?network=https%3A%2F%2Fdev-api.zilliqa.com)
-: Custodial Auction contract which can auction an asset based on ZRC-1 NFT standard with a configuration for time, and price distribution based on bonding curve
+: Custodial Auction contract which can auction any asset based on ZRC-1 NFT standard with a configuration for time, and price distribution based on bonding curve
 
 
 Screenshots:
