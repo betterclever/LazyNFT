@@ -47,9 +47,9 @@ export async function getAllTokenUris() {
 }
 
 export async function getIsParticipantInCollectionId(collection_id) {
-    const collections = getAllCollections();
-    if(collections.has(collection_id)) {
-        const collection = collections.get(collection_id);
+    const collections = await getAllCollections();
+    if(collections[collection_id]) {
+        const collection = collections[collection_id];
         const accountId = selfAccount(window.zilPay);
         return accountId in collection.participants;
     } else return null

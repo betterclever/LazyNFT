@@ -105,6 +105,7 @@ export function FormSection() {
                         const collectionId = getCollectionId(receipt);
                         setCollectionId(collectionId);
                     } else {
+                        console.log(trx);
                         setAuctionStage(AUCTION_STAGE.FAILED);
                     }
                 }
@@ -150,17 +151,50 @@ export function FormSection() {
             transaction: trx
         })
     }
-
+    function getMintStatus(mintStage){
+      switch(mintStage){
+        case MINT_STAGE.UPLOADING:
+            return <span> Uploading to IPFS </span>
+        case MINT_STAGE.UPLOADED:
+            return <span> Files Uploaded to IPFS </span>
+        case MINT_STAGE.VERIFYING_MINTING_TRANSACTION:
+            return <span> Verifying minting transaction </span>
+        case MINT_STAGE.WAITING_FOR_TRANSACTION_COMPLETION:
+            return <span> Files Uploaded to IPFS </span>
+        case MINT_STAGE.VERIFYING_MINTING_TRANSACTION:
+            return <span> Waiting for transaction completion </span>
+        case MINT_STAGE.COMPLETED:
+            return  <span> Minting successful </span>
+        default:
+          return null;
+      }
+    }
+    function getAuctionStatus(auctionStage){
+      switch(auctionStage){
+        case AUCTION_STAGE.NOT_STARTED:
+            return 'Start Auction';
+        case AUCTION_STAGE.VERIFYING_TRANSACTION:
+            return 'Verifying transaction';
+        case AUCTION_STAGE.WAITING_FOR_TRANSACTION_COMPLETION:
+            return 'Waiting for transaction completion'
+        case AUCTION_STAGE.COMPLETED:
+            return 'Transaction Completed'
+        case AUCTION_STAGE.FAILED:
+            return 'Transaction Failed (retry)'
+        default:
+          return 'RETRY';
+      }
+    }
     async function startAuctionForCollection() {
-        if(!tokenIds.isEmpty()) {
+        if(tokenIds.length!==0) {
             const nftIds = tokenIds;
-            const distributionPrices = tokenIds.map(t => 1000);
+            const distributionPrices = tokenIds.map(t => (1000).toString());
             const cName = collectionName;
             // Auction time in block count
             const auctionBlockCount = auctionDuration * 60 / 2;
-
+            console.log(distributionPrices,cName);
             setAuctionStage(AUCTION_STAGE.VERIFYING_TRANSACTION);
-            const trx = await startAuction(nftIds, collectionName, distributionPrices, auctionBlockCount)
+            const trx = await startAuction(nftIds,collectionName, distributionPrices, auctionBlockCount.toString())
             setAuctionStage(AUCTION_STAGE.WAITING_FOR_TRANSACTION_COMPLETION);
             setStartAuctionTrx({
                 id: trx.ID,
@@ -185,31 +219,17 @@ export function FormSection() {
                 </div>
             }
 
-            {(mintStage === MINT_STAGE.UPLOADING) &&
-                <span> Uploading to IPFS </span>
-            }
-            {(mintStage === MINT_STAGE.UPLOADED) &&
-                <span> Files Uploaded to IPFS </span>
-            }
-            {(mintStage === MINT_STAGE.VERIFYING_MINTING_TRANSACTION) &&
-                <span> Verifying minting transaction </span>
-            }
-            {(mintStage === MINT_STAGE.WAITING_FOR_TRANSACTION_COMPLETION) &&
-                <span> Waiting for transaction completion </span>
-            }
-            {(mintStage === MINT_STAGE.COMPLETED) &&
-                <span> Minting successful </span>
-            }
+            {getMintStatus(mintStage)}
 
             <div className="mt-10"> Step: 2</div>
             <TextInputField fieldLabel="Collection Name" onInputChange={(input) => setCollectionName(input)}/>
-            <TextInputField fieldLabel="Auction Duration" placeHolder={"in hrs"} onInputChange={(input) => setAuctionDuration(input)}/>
+            <TextInputField fieldLabel="Auction Duration" placeHolder={"in hrs"} onInputChange={(input) => setAuctionDuration(input)} type="number"/>
             <PriceDistribution/>
 
             <button
                 className="mt-6 mb-20 mx-4 align-middle bg-gradient-to-r from-green-400 to-blue-500 text-white font-bold py-2 px-4 rounded inline-flex items-center"
-                onClick={startAuctionForCollection}>
-                <span className="content-center w-full"> Start Auction </span>
+                onClick={startAuctionForCollection} disabled={![AUCTION_STAGE.NOT_STARTED, AUCTION_STAGE.FAILED].includes(auctionStage)}>
+                <span className="content-center w-full"> {getAuctionStatus(auctionStage)} </span>
             </button>
         </div>
         <PreviewSection files={files}/>

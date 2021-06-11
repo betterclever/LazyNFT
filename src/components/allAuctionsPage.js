@@ -1,8 +1,27 @@
+import {useEffect} from 'react';
 import {TopBar} from "./topBar";
 import Countdown from 'react-countdown';
 import { Link } from 'react-router-dom'
+import {getAllCollections,getIsParticipantInCollectionId,getCurrentCollectionEntryPrice,hasParticipantClaimedNFT} from '../utils/contract/readState';
+import { useState } from 'react/cjs/react.development';
+const PARTICIPATION_STATUS = {
+  NOT_PARTICIPATED: "NOT_PARTICIPATED",
+  PARTICIPATED: "PARTICIPATED",
+  CLAIMED: "CLAIMED",
+}
 export function ItemCard({item}) {
-    const {collectionName, currentPrice,collectionId, endTime, status=''}=item;
+    const[status,setStatus]=useState(PARTICIPATION_STATUS.NOT_PARTICIPATED);
+    const {collectionName, currentPrice,collectionId, endTime}=item;
+    useEffect(()=>{
+      getParticipantStatus();
+    },[])
+    async function getParticipantStatus(){
+      const hasParticipated= await getIsParticipantInCollectionId(collectionId);
+      if(hasParticipated){
+        const claimed= await hasParticipantClaimedNFT(collectionId);
+        console.log(claimed);
+      }
+    }
     function getColorById(){
       let h = collectionId % 360;
       return 'hsl(' + h + ', ' + 90 + '%, ' + 90 + '%)';
@@ -23,9 +42,9 @@ export function ItemCard({item}) {
                           daysInHours={true}/>
                         </div>
                     <div> 
-                    {status!=='' && <div className=" mt-2" style={{flexDirection:'row',textAlign:'center'}}>
+                    {/* {status!=='' && <div className=" mt-2" style={{flexDirection:'row',textAlign:'center'}}>
                                         <span className="text-green-800 mt-10"> {status} </span>
-                                    </div>}
+                                    </div>} */}
                 </div>
             </div>
         </div>
@@ -34,20 +53,23 @@ export function ItemCard({item}) {
 }
 
 export function AuctionsGrid() {
+    const [collections,setCollections]=useState({});
+    useEffect(()=>{
+      fetchCollections();
+    },[])
+    async function fetchCollections(){
+      const res = await getAllCollections();
+      setCollections(res);
+      Object.entries(res).map(([key, value]) => console.log("key",key,"value",value));
+    }
     return <div className="grid grid-cols-5 gap-20 ml-20 mr-20 mt-20">
-        <ItemCard item={{collectionId:'563236',collectionName:'Instagram NFTed', currentPrice:'100 ZIL', endTime:'',status:"Claimed"}} />
-        <ItemCard item={{collectionId:'5674536',collectionName:'Instagram NFTed', currentPrice:'100 ZIL', endTime:''}}/>
-        <ItemCard item={{collectionId:'5644336',collectionName:'Instagram NFTed', currentPrice:'100 ZIL', endTime:'', status:"Claimed"}}/>
-        <ItemCard item={{collectionId:'53236',collectionName:'Instagram NFTed', currentPrice:'100 ZIL', endTime:''}}/>
-        <ItemCard item={{collectionId:'563243',collectionName:'Instagram NFTed', currentPrice:'100 ZIL', endTime:''}}/>
-        <ItemCard item={{collectionId:'43236',collectionName:'Instagram NFTed', currentPrice:'100 ZIL', endTime:''}}/>
-        <ItemCard item={{collectionId:'52366',collectionName:'Instagram NFTed', currentPrice:'100 ZIL', endTime:''}}/>
-        <ItemCard item={{collectionId:'25236',collectionName:'Instagram NFTed', currentPrice:'100 ZIL', endTime:''}}/>
+        {Object.entries(collections).map(([key, value])=>
+        <ItemCard item={{collectionId:key,collectionName:value.name, currentPrice:`${getCurrentCollectionEntryPrice(value)} ZIL`, endTime:''}} />)}
     </div>
 }
 
 export function AllAuctionsPage() {
     return <div>
-        <AuctionsGrid/>
-    </div>
+              <AuctionsGrid/>
+            </div>
 }
