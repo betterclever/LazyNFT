@@ -25,6 +25,8 @@ class ZilSubscriptions {
         if(this.trxListeners.has(trxId)) {
             this.trxListeners[trxId].push(func)
         } else {
+            console.log('trxId', trxId);
+            window.zilPay.wallet.addTransactionsQueue(trxId);
             this.trxListeners[trxId] = [func];
         }
     }
@@ -49,6 +51,7 @@ class ZilSubscriptions {
 }
 
 export const zilSubscriptions = new ZilSubscriptions();
+window.zilSubscription = zilSubscriptions;
 
 usingZilPay((zilpay) => {
     setTimeout(() => {
@@ -63,6 +66,7 @@ usingZilPay((zilpay) => {
             zilSubscriptions.getNetworkChangeListeners().forEach((l) => l(net));
         })
         zilpay.wallet.observableTransaction().subscribe((trx) => {
+            console.log('transaction', trx);
             let listeners = zilSubscriptions.getTransactionListeners(trx.id);
             listeners.forEach(l => l(trx));
         })

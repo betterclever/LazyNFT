@@ -1,6 +1,6 @@
 import './App.css';
 import {AuctionPage} from "./components/auctionpage";
-import {SubmitPage} from "./components/submitPage";
+import {SubmitPage} from "./components/submitCollection/submitPage";
 import {useState} from "react";
 import {AllAuctionsPage} from "./components/allAuctionsPage";
 import {TopBar} from "./components/topBar";

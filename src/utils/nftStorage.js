@@ -1,0 +1,3 @@
+import {NFTStorage} from "nft.storage";
+
+export const nftStorageClient = new NFTStorage({ token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkaWQ6ZXRocjoweDg4NjUwNjA2NTAxZjA0Mjk4NTU3OTNlOThiMTJCRmI1M0E5Mjg3M2YiLCJpc3MiOiJuZnQtc3RvcmFnZSIsImlhdCI6MTYyMzIzNjYzOTYwOCwibmFtZSI6InppbG5mdEtleSJ9.j6ZrhwB1ZuxOzI32Ya-lV0tKtfI6vzsMCLizQrhXmkM'})
