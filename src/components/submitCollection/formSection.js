@@ -8,13 +8,22 @@ import {TextInputField} from "./textInputField";
 import {PreviewSection} from "./previewSection";
 
 const UPLOAD_IPFS_STAGE = 1;
-const MINT_STAGE = 2;
 const CREATE_AUCTION_STAGE = 3;
 const AUCTION_CREATED_STAGE = 4;
 
+const MINT_STAGE = {
+    NOT_INITIATED: "NOT_INITIATED",
+    UPLOADING: "UPLOADING",
+    UPLOADED: "UPLOADED",
+    VERIFYING_MINTING_TRANSACTION: "VERIFYING_MINTING_TRANSACTION",
+    WAITING_FOR_TRANSACTION_COMPLETION: "WAITING_FOR_TRANSACTION_COMPLETION",
+    COMPLETED: "COMPLETED",
+    FAILED: "FAILED"
+}
+
 export function FormSection() {
     const [files, setFiles] = useState([]);
-    const [stage, setStage] = useState(0);
+    const [mintStage, setMintStage] = useState(MINT_STAGE.NOT_INITIATED);
 
     const [mintTrx, setMintTrx] = useState({
         id: null,
@@ -23,17 +32,25 @@ export function FormSection() {
     })
 
     useInterval(async () => {
-        if(mintTrx.resultAwaited === true && mintTrx.id !== null) {
+        if (mintTrx.resultAwaited === true && mintTrx.id !== null) {
             try {
                 const trxData = await getTransaction(mintTrx.id);
-                if(trxData?.receipt?.success === true) {
+                const receipt = trxData?.receipt;
+                if (receipt !== undefined) {
                     setMintTrx({
                         id: mintTrx.id,
                         transaction: trxData,
                         resultAwaited: false
                     })
+                    const success = receipt.success;
+                    if(success) {
+                        setMintStage(MINT_STAGE.COMPLETED);
+                    } else {
+                        setMintStage(MINT_STAGE.FAILED);
+                    }
                 }
-            } catch (ex) {}
+            } catch (ex) {
+            }
         }
     }, 1000);
 
@@ -57,8 +74,12 @@ export function FormSection() {
     }
 
     async function mintCollection() {
+        setMintStage(MINT_STAGE.UPLOADING);
         const ipfsLinks = await uploadImagesToIPFS();
+        setMintStage(MINT_STAGE.UPLOADED);
+        setMintStage(MINT_STAGE.VERIFYING_MINTING_TRANSACTION);
         const trx = await mintTokens(ipfsLinks.map(l => l.url));
+        setMintStage(MINT_STAGE.WAITING_FOR_TRANSACTION_COMPLETION);
         console.log(trx);
 
         // Reset the minTrxState
@@ -71,19 +92,45 @@ export function FormSection() {
 
 
     return <div className="grid grid-cols-12">
-        <div className="col-span-4 flex flex-col mt-20 ml-10">
-            <TextInputField fieldLabel="Collection Name"/>
-            <span className="text-md font-bold ml-4 ">AUCTION DURATION</span>
-            <div className="grid grid-cols-10 align-middle">
-                <div className="col-span-2"><TextInputField placeHolder={"in hrs"}/></div>
-            </div>
+        <div className="col-span-4 mt-20 ml-10 flex flex-col">
+            <div> Step: 1</div>
+            {
+                (mintStage === MINT_STAGE.NOT_INITIATED || mintStage === MINT_STAGE.FAILED) &&
+                <div className="flex flex-col">
+                    <FileUploadButton setFiles={setFiles}/>
+                    <button
+                        className="mt-6 mx-4 align-middle bg-gradient-to-r from-green-400 to-blue-500 text-white font-bold py-2 px-4 rounded inline-flex items-center"
+                        onClick={mintCollection}>
+                        <span className="content-center w-full"> Mint NFTs </span>
+                    </button>
+                </div>
+            }
 
+            {(mintStage === MINT_STAGE.UPLOADING) &&
+                <span> Uploading to IPFS </span>
+            }
+            {(mintStage === MINT_STAGE.UPLOADED) &&
+                <span> Files Uploaded to IPFS </span>
+            }
+            {(mintStage === MINT_STAGE.VERIFYING_MINTING_TRANSACTION) &&
+                <span> Verifying minting transaction </span>
+            }
+            {(mintStage === MINT_STAGE.WAITING_FOR_TRANSACTION_COMPLETION) &&
+                <span> Waiting for transaction completion </span>
+            }
+            {(mintStage === MINT_STAGE.COMPLETED) &&
+                <span> Minting successful </span>
+            }
+
+            <div className="mt-10"> Step: 2</div>
+            <TextInputField fieldLabel="Collection Name"/>
+            <div className="col-span-2"><TextInputField fieldLabel={"Auction Duration"} placeHolder={"in hrs"}/></div>
             <PriceDistribution/>
-            <FileUploadButton setFiles={setFiles}/>
+
             <button
-                className="mt-6 mx-4 align-middle bg-gradient-to-r from-green-400 to-blue-500 text-white font-bold py-2 px-4 rounded inline-flex items-center"
+                className="mt-6 mb-20 mx-4 align-middle bg-gradient-to-r from-green-400 to-blue-500 text-white font-bold py-2 px-4 rounded inline-flex items-center"
                 onClick={mintCollection}>
-                <span className="content-center w-full"> MINT YOUR COLLECTION </span>
+                <span className="content-center w-full"> Start Auction </span>
             </button>
         </div>
         <PreviewSection files={files}/>

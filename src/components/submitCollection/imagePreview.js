@@ -11,7 +11,7 @@ export function ImagePreview({file}) {
     }, [file]);
 
 
-    return <div className="col-span-1 shadow-md">
+    return <div className="col-span-1">
         {fileSource !== null && <img className="rounded-xl" src={fileSource}/>}
     </div>
 }
