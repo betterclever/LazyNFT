@@ -32,7 +32,7 @@ export function ApplyMinter({recheckStatus}) {
                 }
             } catch (ex) {}
         }
-    }, 1000);
+    }, 3000);
 
     const applyMinter = async () => {
         const trx = await getMinterAccess();

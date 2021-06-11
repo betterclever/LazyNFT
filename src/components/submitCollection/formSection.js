@@ -114,7 +114,7 @@ export function FormSection() {
             }
         }
 
-    }, 1000);
+    }, 3000);
 
     function postImage(file) {
         return nftStorageClient.store({

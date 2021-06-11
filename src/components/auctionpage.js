@@ -1,6 +1,9 @@
 import {useParams} from 'react-router-dom';
 import {useEffect, useState} from "react";
 import {getAllTokenUris, getCollection, getCurrentCollectionEntryPrice} from "../utils/contract/readState";
+import {participateInAuction} from "../utils/contract/auctionContract";
+import {useInterval} from "../hooks/useInterval";
+import {getTransaction} from "../utils/contract/contractOps";
 
 export function ImagePreview({src}) {
     console.log(src)
@@ -63,11 +66,70 @@ export function CurrentBidView({currentPrice, participantCount, totalSpots}) {
     </div>
 }
 
-export function PlaceBidView() {
+const ENTER_AUCTION_STATE = {
+    NOT_INITIATED: "NOT_INITIATED",
+    VERIFYING_TRANSACTION: "VERIFYING_TRANSACTION",
+    WAITING_FOR_TRANSACTION_COMPLETION: "WAITING_FOR_TRANSACTION_COMPLETION",
+    COMPLETED: "COMPLETED",
+    FAILED: "FAILED",
+}
+
+export function PlaceBidButton({collectionId, entryPrice}) {
+    const [enterAuctionState, setEnterAuctionState] = useState(ENTER_AUCTION_STATE.NOT_INITIATED);
+    const [trx, setTrx] = useState({
+        id: null,
+        transaction: null,
+        resultAwaited: false
+    })
+
+    const startEnterAuctionTransaction = async () => {
+        const trx = await participateInAuction(collectionId, entryPrice);
+        setTrx({
+            id: trx.ID,
+            transaction: trx,
+            resultAwaited: true
+        })
+    }
+
+    useInterval(async () => {
+        if(trx.resultAwaited === true && trx.id !== null) {
+            try {
+                const trxData = await getTransaction(trx.id);
+                if(trxData?.receipt !== undefined) {
+                    setTrx({
+                        id: trx.id,
+                        transaction: trxData,
+                        resultAwaited: false,
+                    })
+                }
+            } catch (ex) {
+                console.error(ex);
+            }
+        }
+    }, 300)
+
+    function stateDisplayText() {
+        switch (enterAuctionState) {
+            case ENTER_AUCTION_STATE.NOT_INITIATED: return "Participate in Auction"
+            case ENTER_AUCTION_STATE.VERIFYING_TRANSACTION: return "Verifying transaction"
+            case ENTER_AUCTION_STATE.WAITING_FOR_TRANSACTION_COMPLETION: return "Waiting for transaction complettion"
+            case ENTER_AUCTION_STATE.COMPLETED: return "Participation successful"
+            case ENTER_AUCTION_STATE.FAILED: return "Transaction failed. Retry?"
+            default: return "Participate in Auction"
+        }
+    }
+
     return <div className="mt-10 mb-20 flex flex-row">
         <button
-            className="text-xl w-40  flex-grow shadow bg-purple-500 hover:bg-purple-400 focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 roundedshadow bg-purple-500 hover:bg-purple-400 focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 rounded">
-            Claim your NFT
+            className="text-xl w-40  flex-grow shadow
+            bg-gradient-to-r from-green-400 to-blue-500
+            hover:bg-gradient-to-r hover:from-blue-400 hover:to-green-500
+            focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4
+            roundedshadow focus:shadow-outline focus:outline-none
+            text-white font-bold py-2 px-4 rounded"
+            onClick={startEnterAuctionTransaction}
+        >
+            {stateDisplayText()}
         </button>
     </div>
 }
@@ -104,7 +166,7 @@ export function AuctionCollectionInfo({collection}) {
         />
         <BondingCurve/>
         <AuctionTimer/>
-        <PlaceBidView/>
+        <PlaceBidButton/>
     </div>
 }
 
