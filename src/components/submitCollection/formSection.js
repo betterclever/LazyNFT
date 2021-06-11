@@ -1,11 +1,13 @@
 import {useState} from "react";
-import {getTransaction, mintTokens, startAuction} from "../../utils/contract/contractOps";
+import {getTransaction} from "../../utils/contract/contractOps";
 import {nftStorageClient} from "../../utils/nftStorage";
 import {useInterval} from "../../hooks/useInterval";
 import {PriceDistribution} from "./priceDistribution";
 import {FileUploadButton} from "./fileUploadButton";
 import {TextInputField} from "./textInputField";
 import {PreviewSection} from "./previewSection";
+import {mintTokens} from "../../utils/contract/nftContract";
+import {startAuction} from "../../utils/contract/auctionContract";
 
 const MINT_STAGE = {
     NOT_INITIATED: "NOT_INITIATED",

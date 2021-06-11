@@ -1,7 +1,7 @@
 const {tryGettingAccount} = require("../accountHook");
 
-const NFT_CONTRACT_ADDRESS = "0xdf910808ff4595d1bf45cc5d62818c11530adb18";
-const AUCTION_CONTRACT_ADDRESS = "0xd7c94c6ecef5fa22cd6fc1094c9023a56effb7d8";
+export const NFT_CONTRACT_ADDRESS = "0xdf910808ff4595d1bf45cc5d62818c11530adb18";
+export const AUCTION_CONTRACT_ADDRESS = "0xd7c94c6ecef5fa22cd6fc1094c9023a56effb7d8";
 
 
 export async function usingZilPay(func) {
@@ -41,87 +41,4 @@ export async function checkIsMinter() {
     })
 }
 
-export async function getMinterAccess() {
-    return await usingNFTContract(async (contract, zilpay) => {
-        const isMinter = await checkIsMinter();
-        if(!isMinter) {
-            const trx = await contract.call("GetMinterAccess", [], {
-                gasLimit: '25000',
-                gasPrice: '1000000000'
-            })
-            return trx;
-        } else return null;
-    })
-}
-
-const selfAccount = (zilpay) => zilpay.wallet?.defaultAccount?.base16
-
-export async function mintTokens(token_uris) {
-    return await usingNFTContract(async (contract, zilpay) => {
-        const isMinter = await checkIsMinter();
-        if(isMinter) {
-            const trxParams = {
-                gasLimit: '25000',
-                gasPrice: '1000000000'
-            };
-            const transitionParams = [
-                {
-                    vname: 'to',
-                    type: 'ByStr20',
-                    value: selfAccount(zilpay),
-                },
-                {
-                    vname: 'token_uris_list',
-                    type: 'List (String)',
-                    value: token_uris,
-                }
-            ];
-            const trx = await contract.call("BatchMint", transitionParams, trxParams);
-            return trx;
-        } else {
-            throw new Error("Account does not have minter access");
-        }
-    })
-}
-
-export async function startAuction(token_ids, collection_name, price_distribution, auction_block_count) {
-    return await usingAuctionContract(async (contract, zilpay) => {
-        const trxParams = {
-            gasLimit: '25000',
-            gasPrice: '1000000000'
-        };
-        const transitionParams = [
-            {
-                vname: 'token_contract',
-                type: 'ByStr20',
-                value: NFT_CONTRACT_ADDRESS,
-            },
-            {
-                vname: 'token_list',
-                type: 'List (String)',
-                value: token_ids,
-            },
-            {
-                vname: 'entry_prices',
-                type: 'List (Uint128)',
-                value: price_distribution
-            },
-            {
-                vname: 'collection_name',
-                type: 'String',
-                value: collection_name
-            },
-            {
-                vname: 'auction_block_count',
-                type: 'Uint128',
-                value: auction_block_count
-            }
-        ];
-        const trx = await contract.call("StartAuction", transitionParams, trxParams);
-        return trx;
-    })
-}
-
-export async function enterAuction(collection_id, ) {
-
-}
+export const selfAccount = (zilpay) => zilpay.wallet?.defaultAccount?.base16

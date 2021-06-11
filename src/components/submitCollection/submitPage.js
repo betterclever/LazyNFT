@@ -1,7 +1,8 @@
 import {FormSection} from "./formSection";
 import {useEffect, useState} from "react";
-import {checkIsMinter, getMinterAccess, getTransaction} from "../../utils/contract/contractOps";
+import {checkIsMinter, getTransaction} from "../../utils/contract/contractOps";
 import {useInterval} from "../../hooks/useInterval";
+import {getMinterAccess} from "../../utils/contract/nftContract";
 
 export function ApplyMinter({recheckStatus}) {
     const [trxState, setTrxState] = useState({

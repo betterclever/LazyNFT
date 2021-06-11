@@ -1,4 +1,4 @@
-import {usingAuctionContract} from "./contractOps";
+import {selfAccount, usingAuctionContract} from "./contractOps";
 
 const {usingNFTContract} = require("./contractOps");
 
@@ -33,4 +33,29 @@ export async function getAllTokenUris() {
         const state = await contract.getSubState('token_uris');
         return state.token_uris
     })
+}
+
+export async function getIsParticipantInCollectionId(collection_id) {
+    const collections = getAllCollections();
+    if(collections.has(collection_id)) {
+        const collection = collections.get(collection_id);
+        const accountId = selfAccount(window.zilPay);
+        return accountId in collection.participants;
+    } else return null
+}
+
+export async function hasParticipantClaimedNFT(collection_id) {
+    const collections = getAllCollections();
+    if(collections.has(collection_id)) {
+        const collection = collections.get(collection_id);
+        const accountId = selfAccount(window.zilPay);
+        if(accountId in collection.participants) {
+            return collection.participants[accountId]
+        } else return false
+    } else return null
+}
+
+export function getCurrentCollectionEntryPrice(collection) {
+    const currentParticipantCount = Object.keys(collection.participants).length;
+    return collection.entryPrices[currentParticipantCount];
 }
