@@ -5,14 +5,15 @@ import {participateInAuction} from "../utils/contract/auctionContract";
 import {useInterval} from "../hooks/useInterval";
 import {getTransaction} from "../utils/contract/contractOps";
 
-export function ImagePreview({src}) {
+export function ImagePreview({src, imagestyle}) {
     console.log(src)
-    return <div className="col-span-1">
+    return <div className={`col-span-1 ${imagestyle}`}>
         <img src={src}/>
     </div>
 }
 
-export function CollectionImages({ipfsMetadataLinks}) {
+export function CollectionImages({ipfsMetadataLinks,classname="", imagestyle=""}) {
+  console.log('METADATA', ipfsMetadataLinks);
     const [imageUrls, setImageUrls] = useState([]);
 
     function ipfsToHttps(ipfsUrl) {
@@ -36,8 +37,8 @@ export function CollectionImages({ipfsMetadataLinks}) {
         ).then(urls => setImageUrls(urls));
     }, [ipfsMetadataLinks]);
 
-    return <div className="grid grid-cols-3 gap-5 col-start-7 col-span-4 mt-10 ">
-        {imageUrls.map((url) => <ImagePreview key={url} src={url}/>)}
+    return <div className={`grid grid-cols-3 gap-5 col-start-7 col-span-4 mt-10 ${classname}`}>
+        {imageUrls.map((url) => <ImagePreview key={url} src={url} imagestyle={imagestyle}/>)}
     </div>
 }
 

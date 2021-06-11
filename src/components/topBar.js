@@ -14,7 +14,7 @@ export function TopBar() {
     <div className="cursor-pointer col-start-1 col-span-10 ml-10 flex">
       <TopBarNavItem label="Ongoing Auctions" path="/" />
       <TopBarNavItem label="NFTs you own" path="/yourCollection" />
-      <TopBarNavItem label="Submit your own" path="/mintYourOwn" />
+      <TopBarNavItem label="Create Auction" path="/mintYourOwn" />
     </div>
     <div className="col-start-11 col-span-2">
       <AccountSection />

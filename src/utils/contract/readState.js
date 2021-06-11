@@ -28,14 +28,26 @@ export async function getAllCollections() {
                 auctionEnded: endblock < currentBlock
             }
         }
-        await getTokensOwnedByUser("0xd87a675ebf1c11a34239d447f49bd883b4d6d619");
         return collectionInfo;
     })
 }
-export async function getTokensOwnedByUser(address){
-  const owners=await getAllTokenOwners();
-  const newList=Object.entries(owners).filter(([key,value])=>value===address).reduce((acc,[x,y])=>({...acc,[x]:y}),{})
-  
+export async function getTokensOwnedByUser(){
+  try{
+    const address = await selfAccount(window.zilPay);
+    const owners=await getAllTokenOwners();
+    const tokenUris=await getAllTokenUris();
+    console.log('uri', tokenUris);
+    console.log('token_owners', owners);
+    console.log('address', address);
+    const tokenIdList=Object.entries(owners).filter(([key,value])=>value===address.toLowerCase()).map(([key,value])=>key)
+    console.log('tokenIds', tokenIdList);
+    const tokenUriList=Object.entries(tokenUris).filter(([key,value])=>tokenIdList.includes(key)).map(([key,value])=>value);
+    console.log('tokenUris', tokenUriList);
+    return tokenUriList;
+  }catch(e){
+    console.error('err', e);
+    return [];
+  }
 }
 export async function getCollection(collection_id) {
     const collections = await getAllCollections();

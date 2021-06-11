@@ -1,9 +1,8 @@
-import { useEffect } from 'react';
+import { useState,useEffect } from 'react';
 import { TopBar } from "./topBar";
 import Countdown from 'react-countdown';
 import { Link } from 'react-router-dom'
 import { getAllCollections, getIsParticipantInCollectionId, getCurrentCollectionEntryPrice, hasParticipantClaimedNFT, getAllTokenUris } from '../utils/contract/readState';
-import { useState } from 'react/cjs/react.development';
 import { CollectionImages } from '../components/auctionpage';
 const PARTICIPATION_STATUS = {
   NOT_PARTICIPATED: "NOT_PARTICIPATED",
@@ -46,9 +45,9 @@ export function ItemCard({ item }) {
           </div>
         </div>
       </div>
-      <Participate collectionId={collectionId} />
+      {/* <Participate collectionId={collectionId} /> */}
     </div>
-    <CollectionImages ipfsMetadataLinks={collectionTokenMetadataLinks} />
+    <CollectionImages ipfsMetadataLinks={collectionTokenMetadataLinks.slice(0,3)} />
     {/* {status!=='' && <div className=" mt-2" style={{flexDirection:'row',textAlign:'center'}}>
                                         <span className="text-green-800 mt-10"> {status} </span>
                                     </div>} */}
@@ -71,10 +70,13 @@ export function Participate({ collectionId }) {
     }
   }
   switch (status) {
-    case PARTICIPATION_STATUS.NOT_PARTICIPATED:
+    case PARTICIPATION_STATUS.PARTICIPATED:
       return <Link to={`/auctions/${collectionId}`} className=" h-10 align-middle bg-gradient-to-r from-green-400 to-blue-500 text-white font-bold py-0 px-4 rounded inline-flex items-center">
-        <span className="content-center w-full"> Participate Now </span>
-      </Link>
+                <span className="content-center w-full"> Participate Now </span>
+              </Link>
+    
+    case PARTICIPATION_STATUS.NOT_PARTICIPATED:
+      return <span className="content-center w-full"> Thanks for participating. </span>
     default:
       return null
   }
@@ -91,7 +93,7 @@ export function AuctionsGrid() {
   }
   return <div className="grid grid-cols-2 gap-x-20 gap-y-20 m-10">
     {Object.entries(collections).map(([key, value]) =>
-      <ItemCard item={{ collection: value, collectionId: key, collectionName: value.name, currentPrice: `${getCurrentCollectionEntryPrice(value)} ZIL`, endTime: '' }} />)}
+      <ItemCard key={key} item={{ collection: value, collectionId: key, collectionName: value.name, currentPrice: `${getCurrentCollectionEntryPrice(value)} ZIL`, endTime: '' }} />)}
   </div>
 }
 
