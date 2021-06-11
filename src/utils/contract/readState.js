@@ -28,14 +28,17 @@ export async function getAllCollections() {
                 auctionEnded: endblock < currentBlock
             }
         }
+        await getTokensOwnedByUser("0xd87a675ebf1c11a34239d447f49bd883b4d6d619");
         return collectionInfo;
     })
 }
-
+export async function getTokensOwnedByUser(address){
+  const owners=await getAllTokenOwners();
+  const newList=Object.entries(owners).filter(([key,value])=>value===address).reduce((acc,[x,y])=>({...acc,[x]:y}),{})
+  
+}
 export async function getCollection(collection_id) {
     const collections = await getAllCollections();
-    console.log('collections', collections);
-    console.log('collectionId', collection_id);
     return collections[collection_id];
 }
 
@@ -44,6 +47,12 @@ export async function getAllTokenUris() {
         const state = await contract.getSubState('token_uris');
         return state.token_uris
     })
+}
+export async function getAllTokenOwners() {
+  return await usingNFTContract(async (contract) => {
+      const state = await contract.getSubState('token_owners');
+      return state.token_owners
+  })
 }
 
 export async function getIsParticipantInCollectionId(collection_id) {
