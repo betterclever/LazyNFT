@@ -4,12 +4,11 @@ const {usingNFTContract} = require("./contractOps");
 
 export async function getAllCollections() {
     return await usingAuctionContract(async (contract, zilPay) => {
-        const state = contract.getState();
+        const state = await contract.getState();
         // const blockChainState = zilPay.blockchain.getBlock
-        const collectionInfo = new Map();
+        const collectionInfo = {};
         const bi = await zilPay.blockchain.getBlockChainInfo()
         const currentBlock = bi.result.CurrentMiniEpoch;
-
         for (let i = 1; i <= state.collection_count; i++) {
             const endblock = state.collection_auction_endblock[i];
             collectionInfo[i] = {

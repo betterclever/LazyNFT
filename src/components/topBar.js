@@ -13,6 +13,7 @@ export function TopBar() {
   return <div className="grid grid-cols-12 h-20">
     <div className="cursor-pointer col-start-1 col-span-10 ml-10 flex">
       <TopBarNavItem label="Ongoing Auctions" path="/" />
+      <TopBarNavItem label="NFTs you own" path="/yourCollection" />
       <TopBarNavItem label="Submit your own" path="/mintYourOwn" />
     </div>
     <div className="col-start-11 col-span-2">

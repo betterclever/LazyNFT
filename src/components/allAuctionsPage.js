@@ -1,8 +1,12 @@
+import {useEffect} from 'react';
 import {TopBar} from "./topBar";
 import Countdown from 'react-countdown';
 import { Link } from 'react-router-dom'
+import {getAllCollections} from '../utils/contract/readState';
+import { useState } from 'react/cjs/react.development';
 export function ItemCard({item}) {
     const {collectionName, currentPrice,collectionId, endTime, status=''}=item;
+
     function getColorById(){
       let h = collectionId % 360;
       return 'hsl(' + h + ', ' + 90 + '%, ' + 90 + '%)';
@@ -34,20 +38,23 @@ export function ItemCard({item}) {
 }
 
 export function AuctionsGrid() {
+    const [collections,setCollections]=useState({1:{},2:{}});
+    useEffect(()=>{
+      fetchCollections();
+    },[])
+    async function fetchCollections(){
+      const res = await getAllCollections();
+      setCollections(res);
+      // Object.entries(res).map(([key, value]) => console.log("key",key,"value",value.name));
+    }
     return <div className="grid grid-cols-5 gap-20 ml-20 mr-20 mt-20">
-        <ItemCard item={{collectionId:'563236',collectionName:'Instagram NFTed', currentPrice:'100 ZIL', endTime:'',status:"Claimed"}} />
-        <ItemCard item={{collectionId:'5674536',collectionName:'Instagram NFTed', currentPrice:'100 ZIL', endTime:''}}/>
-        <ItemCard item={{collectionId:'5644336',collectionName:'Instagram NFTed', currentPrice:'100 ZIL', endTime:'', status:"Claimed"}}/>
-        <ItemCard item={{collectionId:'53236',collectionName:'Instagram NFTed', currentPrice:'100 ZIL', endTime:''}}/>
-        <ItemCard item={{collectionId:'563243',collectionName:'Instagram NFTed', currentPrice:'100 ZIL', endTime:''}}/>
-        <ItemCard item={{collectionId:'43236',collectionName:'Instagram NFTed', currentPrice:'100 ZIL', endTime:''}}/>
-        <ItemCard item={{collectionId:'52366',collectionName:'Instagram NFTed', currentPrice:'100 ZIL', endTime:''}}/>
-        <ItemCard item={{collectionId:'25236',collectionName:'Instagram NFTed', currentPrice:'100 ZIL', endTime:''}}/>
+        {Object.entries(collections).map(([key, value])=>
+        <ItemCard item={{collectionId:key,collectionName:value.name, currentPrice:'100 ZIL', endTime:'',status:"Claimed"}} />)}
     </div>
 }
 
 export function AllAuctionsPage() {
     return <div>
-        <AuctionsGrid/>
-    </div>
+              <AuctionsGrid/>
+            </div>
 }

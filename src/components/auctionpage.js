@@ -103,8 +103,8 @@ export function AuctionView() {
 }
 
 export function AuctionPage() {
-    let collectionId = useParams();
-    console.log(collectionId);
+    let itemKey = useParams();
+    console.log(itemKey);
     return <div>
         <AuctionView/>
     </div>
