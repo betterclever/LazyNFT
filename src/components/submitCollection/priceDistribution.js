@@ -1,7 +1,7 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {PriceDistributionInput} from "./priceDistributionInput";
 
-export function PriceDistribution() {
+export function PriceDistribution({onDistributionChange}) {
     const [itemCounter, setItemCounter] = useState(0);
     const [items, setItems] = useState([]);
     const addItem = () => {
@@ -18,6 +18,10 @@ export function PriceDistribution() {
         const newItems = items.filter((i) => i.key !== key);
         setItems(newItems);
     }
+
+    useEffect(() => {
+        onDistributionChange(items)
+    }, [items]);
 
     return <div className="mt-4">
         <div className="flex-row mb-5">

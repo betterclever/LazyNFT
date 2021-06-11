@@ -1,9 +1,15 @@
 import {useParams} from 'react-router-dom';
 import {useEffect, useState} from "react";
-import {getAllTokenUris, getCollection, getCurrentCollectionEntryPrice} from "../utils/contract/readState";
+import {
+    getAllTokenUris,
+    getCollection,
+    getCollectionPriceDistribution, getCurrentBlockNumber,
+    getCurrentCollectionEntryPrice
+} from "../utils/contract/readState";
 import {participateInAuction} from "../utils/contract/auctionContract";
 import {useInterval} from "../hooks/useInterval";
 import {getTransaction} from "../utils/contract/contractOps";
+import Countdown from "react-countdown";
 
 export function ImagePreview({src, imagestyle}) {
     console.log(src)
@@ -23,7 +29,6 @@ export function CollectionImages({ipfsMetadataLinks,classname="", imagestyle=""}
     }
 
     async function getImageUrl(metadataLink) {
-        console.log(metadataLink)
         const httpUrl = ipfsToHttps(metadataLink)
         const data = await fetch(httpUrl);
         const json = await data.json();
@@ -42,13 +47,35 @@ export function CollectionImages({ipfsMetadataLinks,classname="", imagestyle=""}
     </div>
 }
 
-export function AuctionTimer() {
+export function AuctionTimer({collection}) {
+    const [endTime, setEndTime] = useState(null);
+
+    useInterval(async () => {
+        const currentBlockNumber = await getCurrentBlockNumber();
+        const endBlock = collection.auctionEndblock;
+        const diff = ((endBlock - currentBlockNumber)) * 21;
+        console.log('diff', diff);
+        setEndTime(Date.now() + diff * 1000);
+    }, 10000);
+
     return <div className="mt-10">
-        <div className="flex flex-col">
-            <span className="text-2xl text-gray-800"> ending in  </span>
-            {' '}
-            <span className="text-3xl text-gray-500"> 2 hours 3 minutes 30 seconds </span>
-        </div>
+        {
+            collection.auctionEnded ?
+                <div className="flex flex-col">
+                    <span className="text-2xl text-gray-800"> Auction Ended  </span>
+                </div> :
+                <div className="flex flex-col">
+                    <span className="text-2xl text-gray-800"> ending in  </span>
+                    {' '}
+                    {/*<span className="text-3xl text-gray-500"> 2 hours 3 minutes 30 seconds </span>*/}
+                    {
+                      endTime !== null &&
+                      <Countdown className="text-3xl text-gray-500" date={endTime}
+                                   daysInHours={true}/>
+                    }
+                </div>
+        }
+
     </div>
 }
 
@@ -84,7 +111,9 @@ export function PlaceBidButton({collectionId, entryPrice}) {
     })
 
     const startEnterAuctionTransaction = async () => {
+        setEnterAuctionState(ENTER_AUCTION_STATE.VERIFYING_TRANSACTION)
         const trx = await participateInAuction(collectionId, entryPrice);
+        setEnterAuctionState(ENTER_AUCTION_STATE.WAITING_FOR_TRANSACTION_COMPLETION)
         setTrx({
             id: trx.ID,
             transaction: trx,
@@ -102,6 +131,12 @@ export function PlaceBidButton({collectionId, entryPrice}) {
                         transaction: trxData,
                         resultAwaited: false,
                     })
+                    if(trxData.receipt.success) {
+                        setEnterAuctionState(ENTER_AUCTION_STATE.COMPLETED);
+                    } else {
+                        console.log(trx);
+                        setEnterAuctionState(ENTER_AUCTION_STATE.FAILED);
+                    }
                 }
             } catch (ex) {
                 console.error(ex);
@@ -113,7 +148,7 @@ export function PlaceBidButton({collectionId, entryPrice}) {
         switch (enterAuctionState) {
             case ENTER_AUCTION_STATE.NOT_INITIATED: return "Participate in Auction"
             case ENTER_AUCTION_STATE.VERIFYING_TRANSACTION: return "Verifying transaction"
-            case ENTER_AUCTION_STATE.WAITING_FOR_TRANSACTION_COMPLETION: return "Waiting for transaction complettion"
+            case ENTER_AUCTION_STATE.WAITING_FOR_TRANSACTION_COMPLETION: return "Waiting for transaction completion"
             case ENTER_AUCTION_STATE.COMPLETED: return "Participation successful"
             case ENTER_AUCTION_STATE.FAILED: return "Transaction failed. Retry?"
             default: return "Participate in Auction"
@@ -135,29 +170,21 @@ export function PlaceBidButton({collectionId, entryPrice}) {
     </div>
 }
 
-export function BondingCurve() {
+export function BondingCurve({distribution}) {
+    console.log('distribution', distribution);
     return <div className="mt-10 ">
-        <span className="text-2xl text-gray-800 col-span-2"> Price Distribution </span>
-        <div className="grid grid-cols-4 gap-5 mt-5">
-            <span className="text-2xl text-gray-800 col-span-2"> 1-20  </span>
-            <span className="text-2xl text-red-800 col-span-2"> 100 ZIL </span>
-        </div>
-        <div className="grid grid-cols-4 gap-5">
-            <span className="text-2xl text-gray-800 col-span-2"> 20-40  </span>
-            <span className="text-2xl text-red-800 col-span-2"> 150 ZIL </span>
-        </div>
-        <div className="grid grid-cols-4 gap-5">
-            <span className="text-2xl text-gray-800 col-span-2"> 20-75  </span>
-            <span className="text-2xl text-red-800 col-span-2"> 250 ZIL </span>
-        </div>
-        <div className="grid grid-cols-4 gap-5">
-            <span className="text-2xl text-gray-800 col-span-2"> 75-100  </span>
-            <span className="text-2xl text-red-800 col-span-2"> 400 ZIL </span>
-        </div>
+        <div className="mb-5 text-2xl text-gray-800 col-span-2"> Price Distribution </div>
+        {distribution.map((v, index) => {
+            return <div className="grid grid-cols-4 gap-5">
+            <span className="text-2xl text-gray-800 col-span-2"> { index === 0 ? 'First' : 'Next' } {v.count} </span>
+            <span className="text-2xl text-red-800 col-span-2"> {v.price} ZIL </span>
+            </div>
+        })}
     </div>
 }
 
-export function AuctionCollectionInfo({collection}) {
+export function AuctionCollectionInfo({collectionId, collection}) {
+    console.log('collection', collection);
     return <div className="col-span-4 col-start-2 mt-20 flex flex-col">
         <h1 className="font-bold text-6xl text-gray-600"> {collection.name} </h1>
         <CurrentBidView
@@ -165,9 +192,12 @@ export function AuctionCollectionInfo({collection}) {
             participantCount={Object.keys(collection.participants).length}
             totalSpots={collection.tokenIds.length}
         />
-        <BondingCurve/>
-        <AuctionTimer/>
-        <PlaceBidButton/>
+        <BondingCurve distribution={getCollectionPriceDistribution(collection)}/>
+        <AuctionTimer collection={collection}/>
+        {
+            !collection.auctionEnded ??
+            <PlaceBidButton collectionId={collectionId} entryPrice={getCurrentCollectionEntryPrice(collection)}/>
+        }
     </div>
 }
 

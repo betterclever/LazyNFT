@@ -15,7 +15,7 @@ export async function startAuction(token_ids, collection_name, price_distributio
                 },
                 {
                     vname: 'token_list',
-                    type: 'List (String)',
+                    type: 'List (Uint256)',
                     value: token_ids,
                 },
                 {

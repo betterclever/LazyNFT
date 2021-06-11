@@ -35,6 +35,7 @@ export function FormSection() {
     const [collectionName, setCollectionName] = useState("");
     const [auctionDuration, setAuctionDuration] = useState(0);
     const [collectionId, setCollectionId] = useState(null);
+    const [priceDistribution, setPriceDistribution] = useState([]);
 
     const [mintTrx, setMintTrx] = useState({
         id: null,
@@ -115,7 +116,6 @@ export function FormSection() {
         }
 
     }, 3000);
-
     function postImage(file) {
         return nftStorageClient.store({
             name: 'Test 2',
@@ -126,7 +126,12 @@ export function FormSection() {
 
     async function uploadImagesToIPFS() {
         try {
-            const promises = Array.from(files).map(async (file) => postImage(file));
+            const fl = Array.from(files)
+            if(fl.length === 0) {
+                alert("Select at-least one image to mint")
+                return
+            }
+            const promises = fl.map(async (file) => postImage(file));
             const result = await Promise.all(promises);
             console.log("result", result);
             return result
@@ -136,6 +141,11 @@ export function FormSection() {
     }
 
     async function mintCollection() {
+        const fl = Array.from(files)
+        if(fl.length === 0) {
+            alert("Select at-least one image to mint")
+            return
+        }
         setMintStage(MINT_STAGE.UPLOADING);
         const ipfsLinks = await uploadImagesToIPFS();
         setMintStage(MINT_STAGE.UPLOADED);
@@ -160,8 +170,6 @@ export function FormSection() {
         case MINT_STAGE.VERIFYING_MINTING_TRANSACTION:
             return <span> Verifying minting transaction </span>
         case MINT_STAGE.WAITING_FOR_TRANSACTION_COMPLETION:
-            return <span> Files Uploaded to IPFS </span>
-        case MINT_STAGE.VERIFYING_MINTING_TRANSACTION:
             return <span> Waiting for transaction completion </span>
         case MINT_STAGE.COMPLETED:
             return  <span> Minting successful </span>
@@ -188,7 +196,19 @@ export function FormSection() {
     async function startAuctionForCollection() {
         if(tokenIds.length!==0) {
             const nftIds = tokenIds;
-            const distributionPrices = tokenIds.map(t => (1000).toString());
+            const priceDistributionLinear = [];
+            priceDistribution.forEach(({units, price}) => {
+                for (let i = 0; i < units; i++) {
+                    priceDistributionLinear.push(price);
+                }
+            })
+
+            if(priceDistributionLinear.length !== nftIds.length) {
+                alert("Distribution count and NFT image size doesn't match")
+                return
+            }
+
+            const distributionPrices = priceDistributionLinear.map(t => t.toString());
             const cName = collectionName;
             // Auction time in block count
             const auctionBlockCount = auctionDuration * 60 / 2;
@@ -224,7 +244,7 @@ export function FormSection() {
             <div className="mt-10"> Step: 2</div>
             <TextInputField fieldLabel="Collection Name" onInputChange={(input) => setCollectionName(input)}/>
             <TextInputField fieldLabel="Auction Duration" placeHolder={"in hrs"} onInputChange={(input) => setAuctionDuration(input)} type="number"/>
-            <PriceDistribution/>
+            <PriceDistribution onDistributionChange={(distribution) => setPriceDistribution(distribution)}/>
 
             <button
                 className="mt-6 mb-20 mx-4 align-middle bg-gradient-to-r from-green-400 to-blue-500 text-white font-bold py-2 px-4 rounded inline-flex items-center"

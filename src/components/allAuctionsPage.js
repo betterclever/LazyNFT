@@ -2,8 +2,16 @@ import { useState,useEffect } from 'react';
 import { TopBar } from "./topBar";
 import Countdown from 'react-countdown';
 import { Link } from 'react-router-dom'
-import { getAllCollections, getIsParticipantInCollectionId, getCurrentCollectionEntryPrice, hasParticipantClaimedNFT, getAllTokenUris } from '../utils/contract/readState';
-import { CollectionImages } from '../components/auctionpage';
+import {
+  getAllCollections,
+  getIsParticipantInCollectionId,
+  getCurrentCollectionEntryPrice,
+  hasParticipantClaimedNFT,
+  getAllTokenUris,
+  getCurrentBlockNumber
+} from '../utils/contract/readState';
+import { CollectionImages } from './auctionpage';
+import {useInterval} from "../hooks/useInterval";
 const PARTICIPATION_STATUS = {
   NOT_PARTICIPATED: "NOT_PARTICIPATED",
   PARTICIPATED: "PARTICIPATED",
@@ -12,7 +20,18 @@ const PARTICIPATION_STATUS = {
 export function ItemCard({ item }) {
 
   const [collectionTokenMetadataLinks, setCollectionTokenMetadataLinks] = useState([]);
-  const { collection, collectionName, currentPrice, collectionId, endTime } = item;
+  const { collection, collectionName, currentPrice, collectionId } = item;
+
+  const calculatedEndTime =  Date.now() + collection.auctionBlockTimeRemaining * 21 * 1000
+  const [endTime, setEndTime] = useState(calculatedEndTime);
+
+  useInterval(async () => {
+    const currentBlockNumber = await getCurrentBlockNumber();
+    const endBlock = collection.auctionEndblock;
+    const diff = ((endBlock - currentBlockNumber)) * 21;
+    console.log('diff', diff);
+    setEndTime(Date.now() + diff * 1000);
+  }, 10000);
 
   useEffect(() => {
     getCollectionImages();
@@ -36,16 +55,24 @@ export function ItemCard({ item }) {
         <div className="mt-2">
           <span className="text-gray-800"> Current Price:  </span>
           <span className="text-blue-800 mt-1"> {currentPrice} </span>
-          <div className="flex ">
-            <span className="text-md text-gray-800 mr-2"> ending in  </span>
-            <Countdown date={Date.now() + 100000}
-              daysInHours={true} />
-          </div>
+          {endTime !== null &&
+            <div className="flex ">
+              {
+                endTime < Date.now() ?
+                    <span className="text-2xl mt-5 text-gray-800 mr-2"> Auction Ended  </span> :
+                    <div>
+                      <span className="text-md text-gray-800 mr-2"> ending in  </span>
+                      <Countdown date={endTime}
+                                 daysInHours={true}/>
+                    </div>
+              }
+            </div>
+          }
           <div>
           </div>
         </div>
       </div>
-      {/* <Participate collectionId={collectionId} /> */}
+       <Participate collectionId={collectionId} />
     </div>
     <CollectionImages ipfsMetadataLinks={collectionTokenMetadataLinks.slice(0,3)} />
     {/* {status!=='' && <div className=" mt-2" style={{flexDirection:'row',textAlign:'center'}}>
@@ -57,29 +84,32 @@ export function ItemCard({ item }) {
 }
 
 export function Participate({ collectionId }) {
-  const [status, setStatus] = useState(PARTICIPATION_STATUS.NOT_PARTICIPATED);
-  useEffect(() => {
-    getParticipantStatus();
-  }, [])
-
-  async function getParticipantStatus() {
-    const hasParticipated = await getIsParticipantInCollectionId(collectionId);
-    if (hasParticipated) {
-      const claimed = await hasParticipantClaimedNFT(collectionId);
-      console.log(claimed);
-    }
-  }
-  switch (status) {
-    case PARTICIPATION_STATUS.PARTICIPATED:
-      return <Link to={`/auctions/${collectionId}`} className=" h-10 align-middle bg-gradient-to-r from-green-400 to-blue-500 text-white font-bold py-0 px-4 rounded inline-flex items-center">
-                <span className="content-center w-full"> Participate Now </span>
-              </Link>
-    
-    case PARTICIPATION_STATUS.NOT_PARTICIPATED:
-      return <span className="content-center w-full"> Thanks for participating. </span>
-    default:
-      return null
-  }
+  // const [status, setStatus] = useState(PARTICIPATION_STATUS.NOT_PARTICIPATED);
+  // useEffect(() => {
+  //   getParticipantStatus();
+  // }, [])
+  //
+  // async function getParticipantStatus() {
+  //   const hasParticipated = await getIsParticipantInCollectionId(collectionId);
+  //   if (hasParticipated) {
+  //     const claimed = await hasParticipantClaimedNFT(collectionId);
+  //     console.log(claimed);
+  //   }
+  // }
+  // switch (status) {
+  //   case PARTICIPATION_STATUS.PARTICIPATED:
+  //     return <Link to={`/auctions/${collectionId}`} className=" h-10 align-middle bg-gradient-to-r from-green-400 to-blue-500 text-white font-bold py-0 px-4 rounded inline-flex items-center">
+  //               <span className="content-center w-full"> View auction </span>
+  //             </Link>
+  //
+  //   case PARTICIPATION_STATUS.NOT_PARTICIPATED:
+  //     return <span className="content-center w-full"> Thanks for participating. </span>
+  //   default:
+  //     return null
+  // }
+  return <Link to={`/auctions/${collectionId}`} className=" h-10 align-middle bg-gradient-to-r from-green-400 to-blue-500 text-white font-bold py-0 px-4 rounded inline-flex items-center">
+    <span className="content-center w-full"> View auction </span>
+  </Link>
 }
 export function AuctionsGrid() {
   const [collections, setCollections] = useState({});

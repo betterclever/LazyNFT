@@ -1,6 +1,14 @@
-import {selfAccount, usingAuctionContract} from "./contractOps";
+import {selfAccount, usingAuctionContract, usingZilPay} from "./contractOps";
 
 const {usingNFTContract} = require("./contractOps");
+
+export async function getCurrentBlockNumber() {
+    return await usingZilPay(async (zilPay) => {
+        const bi = await zilPay.blockchain.getBlockChainInfo()
+        const currentBlock = bi.result.CurrentMiniEpoch;
+        return currentBlock
+    })
+}
 
 export async function getAllCollections() {
     return await usingAuctionContract(async (contract, zilPay) => {
@@ -90,4 +98,31 @@ export async function hasParticipantClaimedNFT(collection_id) {
 export function getCurrentCollectionEntryPrice(collection) {
     const currentParticipantCount = Object.keys(collection.participants).length;
     return collection.entryPrices[currentParticipantCount];
+}
+
+export function getCollectionPriceDistribution(collection) {
+    const pricesDistributions = [];
+    let currentDistribution;
+    // Each collection has at-least 1 token
+    const prices = collection.entryPrices;
+    const price0 = prices[0];
+    currentDistribution = {
+        count: 1,
+        price: price0
+    }
+    console.log('prices', prices);
+    for (let i = 1; i < prices.length; i++) {
+        const price = prices[i];
+        if(price === currentDistribution.price) {
+            currentDistribution.count = currentDistribution.count + 1;
+        } else {
+            pricesDistributions.push(currentDistribution);
+            currentDistribution = {
+                count: 1,
+                price: price
+            }
+        }
+    }
+    pricesDistributions.push(currentDistribution);
+    return pricesDistributions;
 }
