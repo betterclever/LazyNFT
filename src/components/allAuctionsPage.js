@@ -1,12 +1,13 @@
 import {TopBar} from "./topBar";
 import Countdown from 'react-countdown';
+import { Link } from 'react-router-dom'
 export function ItemCard({item}) {
     const {collectionName, currentPrice,collectionId, endTime, status=''}=item;
     function getColorById(){
       let h = collectionId % 360;
       return 'hsl(' + h + ', ' + 90 + '%, ' + 90 + '%)';
     }
-    return <div className="col-span-1 shadow-lg hover:shadow-xl rounded-xl" style={{backgroundColor:getColorById()}}>
+    return <Link to={`/claim/${collectionId}`} className="col-span-1 shadow-lg hover:shadow-xl rounded-xl" style={{backgroundColor:getColorById()}} >
         {/* <div className="">
             <img className="rounded-t-xl" src="https://play-lh.googleusercontent.com/IeNJWoKYx1waOhfWF6TiuSiWBLfqLb18lmZYXSgsH1fvb8v1IYiZr5aYWe0Gxu-pVZX3"/>
         </div> */}
@@ -29,7 +30,7 @@ export function ItemCard({item}) {
             </div>
         </div>
     </div>
-    </div>
+    </Link>
 }
 
 export function AuctionsGrid() {

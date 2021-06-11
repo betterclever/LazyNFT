@@ -1,3 +1,4 @@
+import {useParams} from 'react-router-dom';
 export function ImagePreview() {
     return  <div className="col-span-1 shadow">
               <img src="https://play-lh.googleusercontent.com/IeNJWoKYx1waOhfWF6TiuSiWBLfqLb18lmZYXSgsH1fvb8v1IYiZr5aYWe0Gxu-pVZX3"/>
@@ -102,6 +103,8 @@ export function AuctionView() {
 }
 
 export function AuctionPage() {
+    let collectionId = useParams();
+    console.log(collectionId);
     return <div>
         <AuctionView/>
     </div>

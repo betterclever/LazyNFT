@@ -1,29 +1,39 @@
 import './App.css';
-import {AuctionPage} from "./components/auctionpage";
-import {SubmitPage} from "./components/submitCollection/submitPage";
-import {useState} from "react";
-import {AllAuctionsPage} from "./components/allAuctionsPage";
-import {TopBar} from "./components/topBar";
-
-function getPage(index) {
-    switch (index) {
-        case 0: return <AllAuctionsPage/>
-        case 1: return <AllAuctionsPage/>
-        case 2: return <AuctionPage/>
-        case 3: return <SubmitPage/>
-        default: return <div/>
-    }
-}
+import { AuctionPage } from "./components/auctionpage";
+import { SubmitPage } from "./components/submitCollection/submitPage";
+import { AllAuctionsPage } from "./components/allAuctionsPage";
+import {YourCollectionPage} from './components/yourCollectionPage';
+import { TopBar } from "./components/topBar";
+import {
+  BrowserRouter as Router,
+  Switch,
+  Route
+} from "react-router-dom";
 
 function App() {
-    const [currentPage, setCurrentPage] = useState(0);
 
-    return (
-        <div className="App">
-            <TopBar onPageChange={(index) => setCurrentPage(index)}/>
-            {getPage(currentPage)}
-        </div>
-    );
+  return (
+    <Router>
+      <div>
+        <TopBar />
+        <Switch>
+          <Route path="/claim/:collectionId">
+            <AuctionPage />
+          </Route>
+          <Route path="/mintYourOwn">
+            <SubmitPage />
+          </Route>
+          <Route path="/yourCollection">
+            <YourCollectionPage/>
+          </Route>
+          <Route path="/">
+            <AllAuctionsPage />
+          </Route>
+        </Switch>
+      </div>
+    </Router>
+
+  );
 }
 
 export default App;
