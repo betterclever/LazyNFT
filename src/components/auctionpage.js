@@ -36,7 +36,7 @@ export function CollectionImages({ipfsMetadataLinks}) {
         ).then(urls => setImageUrls(urls));
     }, [ipfsMetadataLinks]);
 
-    return <div className="grid grid-cols-3 gap-5 col-start-7 col-span-4 mt-20">
+    return <div className="grid grid-cols-8 gap-5 col-start-7 col-span-4 mt-20 ">
         {imageUrls.map((url) => <ImagePreview key={url} src={url}/>)}
     </div>
 }
