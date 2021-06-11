@@ -3,16 +3,10 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import {AuctionPage} from "./components/auctionpage";
-import {AllAuctionsPage} from "./components/allAuctionsPage";
-import {SubmitPage} from "./components/submitPage";
 
 ReactDOM.render(
     <React.StrictMode>
         <App />
-        {/*  <AuctionPage/>*/}
-        {/*  <AllAuctionsPage/>*/}
-        {/*<SubmitPage/>*/}
     </React.StrictMode>,
     document.getElementById('root')
 );

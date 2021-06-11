@@ -133,8 +133,8 @@ export function FormSection() {
     <div className="col-span-4 flex flex-col mt-20 ml-10">
       <TextInputField fieldLabel="Collection Name" />
       <span className="text-md font-bold ml-4 ">AUCTION DURATION</span>
-      <div className="grid grid-cols-10 align-middle" >
-                <div className="col-span-2"><TextInputField  placeHolder={"in hrs"} /></div>
+      <div className="grid grid-cols-2 align-middle" >
+                <div className="col-span-1"><TextInputField  placeHolder={"in hrs"} type="number"/></div>
                 
       </div>
       
