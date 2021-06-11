@@ -1,7 +1,7 @@
 const {tryGettingAccount} = require("./accountHook");
 
 const NFT_CONTRACT_ADDRESS = "0xdf910808ff4595d1bf45cc5d62818c11530adb18";
-const AUCTION_CONTRACT_ADDRESS = "0xe36379bfbe9d74f0415e756a2848006c135f8c75";
+const AUCTION_CONTRACT_ADDRESS = "0xd7c94c6ecef5fa22cd6fc1094c9023a56effb7d8";
 
 
 export async function usingZilPay(func) {
@@ -84,7 +84,7 @@ export async function mintTokens(token_uris) {
     })
 }
 
-export async function startAuction(token_ids, price_distribution, auction_block_count) {
+export async function startAuction(token_ids, collection_name, price_distribution, auction_block_count) {
     return await usingAuctionContract(async (contract, zilpay) => {
         const trxParams = {
             gasLimit: '25000',
@@ -105,6 +105,11 @@ export async function startAuction(token_ids, price_distribution, auction_block_
                 vname: 'entry_prices',
                 type: 'List (Uint128)',
                 value: price_distribution
+            },
+            {
+                vname: 'collection_name',
+                type: 'String',
+                value: collection_name
             },
             {
                 vname: 'auction_block_count',

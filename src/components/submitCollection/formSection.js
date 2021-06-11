@@ -158,7 +158,7 @@ export function FormSection() {
             const auctionBlockCount = auctionDuration * 60 / 2;
 
             setAuctionStage(AUCTION_STAGE.VERIFYING_TRANSACTION);
-            const trx = await startAuction(nftIds, distributionPrices, auctionBlockCount)
+            const trx = await startAuction(nftIds, collectionName, distributionPrices, auctionBlockCount)
             setAuctionStage(AUCTION_STAGE.WAITING_FOR_TRANSACTION_COMPLETION);
             setStartAuctionTrx({
                 id: trx.ID,
