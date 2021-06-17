@@ -55,21 +55,25 @@ window.zilSubscription = zilSubscriptions;
 
 usingZilPay((zilpay) => {
     setTimeout(() => {
-        zilpay.wallet.observableAccount().subscribe((account) => {
-            console.log("account changed", account)
-            let listeners = zilSubscriptions.getAccountChangeListeners();
-            console.log('total_listeners', listeners.length);
-            listeners.forEach((l) => l(account));
-        });
-        zilpay.wallet.observableNetwork().subscribe((net) => {
-            console.log("network changed", net)
-            zilSubscriptions.getNetworkChangeListeners().forEach((l) => l(net));
-        })
-        zilpay.wallet.observableTransaction().subscribe((trx) => {
-            console.log('transaction', trx);
-            let listeners = zilSubscriptions.getTransactionListeners(trx.id);
-            listeners.forEach(l => l(trx));
-        })
+        try {
+            zilpay.wallet.observableAccount().subscribe((account) => {
+                console.log("account changed", account)
+                let listeners = zilSubscriptions.getAccountChangeListeners();
+                console.log('total_listeners', listeners.length);
+                listeners.forEach((l) => l(account));
+            });
+            zilpay.wallet.observableNetwork().subscribe((net) => {
+                console.log("network changed", net)
+                zilSubscriptions.getNetworkChangeListeners().forEach((l) => l(net));
+            })
+            zilpay.wallet.observableTransaction().subscribe((trx) => {
+                console.log('transaction', trx);
+                let listeners = zilSubscriptions.getTransactionListeners(trx.id);
+                listeners.forEach(l => l(trx));
+            })
+        } catch(e) {
+            console.error(e);
+        }
     }, 1000);
 });
 

@@ -1,4 +1,4 @@
-import { useState,useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { TopBar } from "./topBar";
 import Countdown from 'react-countdown';
 import { Link } from 'react-router-dom'
@@ -11,7 +11,7 @@ import {
   getCurrentBlockNumber
 } from '../utils/contract/readState';
 import { CollectionImages } from './auctionpage';
-import {useInterval} from "../hooks/useInterval";
+import { useInterval } from "../hooks/useInterval";
 const PARTICIPATION_STATUS = {
   NOT_PARTICIPATED: "NOT_PARTICIPATED",
   PARTICIPATED: "PARTICIPATED",
@@ -22,7 +22,7 @@ export function ItemCard({ item }) {
   const [collectionTokenMetadataLinks, setCollectionTokenMetadataLinks] = useState([]);
   const { collection, collectionName, currentPrice, collectionId } = item;
 
-  const calculatedEndTime =  Date.now() + collection.auctionBlockTimeRemaining * 21 * 1000
+  const calculatedEndTime = Date.now() + collection.auctionBlockTimeRemaining * 21 * 1000
   const [endTime, setEndTime] = useState(calculatedEndTime);
 
   useInterval(async () => {
@@ -59,12 +59,12 @@ export function ItemCard({ item }) {
             <div className="flex ">
               {
                 endTime < Date.now() ?
-                    <span className="text-2xl mt-5 text-gray-800 mr-2"> Auction Ended  </span> :
-                    <div>
-                      <span className="text-md text-gray-800 mr-2"> ending in  </span>
-                      <Countdown date={endTime}
-                                 daysInHours={true}/>
-                    </div>
+                  <span className="text-2xl mt-5 text-gray-800 mr-2"> Auction Ended  </span> :
+                  <div>
+                    <span className="text-md text-gray-800 mr-2"> ending in  </span>
+                    <Countdown date={endTime}
+                      daysInHours={true} />
+                  </div>
               }
             </div>
           }
@@ -72,9 +72,9 @@ export function ItemCard({ item }) {
           </div>
         </div>
       </div>
-       <Participate collectionId={collectionId} />
+      <Participate collectionId={collectionId} />
     </div>
-    <CollectionImages ipfsMetadataLinks={collectionTokenMetadataLinks.slice(0,3)} />
+    <CollectionImages ipfsMetadataLinks={collectionTokenMetadataLinks.slice(0, 3)} />
     {/* {status!=='' && <div className=" mt-2" style={{flexDirection:'row',textAlign:'center'}}>
                                         <span className="text-green-800 mt-10"> {status} </span>
                                     </div>} */}
@@ -118,12 +118,16 @@ export function AuctionsGrid() {
   }, [])
   async function fetchCollections() {
     const res = await getAllCollections();
-    setCollections(res);
-    Object.entries(res).map(([key, value]) => console.log("key", key, "value", value));
+    if (res !== null) {
+      setCollections(res);
+    }
+    //Object.entries(res).map(([key, value]) => console.log("key", key, "value", value));
   }
   return <div className="grid grid-cols-2 gap-x-20 gap-y-20 m-10">
-    {Object.entries(collections).map(([key, value]) =>
-      <ItemCard key={key} item={{ collection: value, collectionId: key, collectionName: value.name, currentPrice: `${getCurrentCollectionEntryPrice(value)} ZIL`, endTime: '' }} />)}
+
+    {collections && Object.entries(collections).map(([key, value]) =>
+      <ItemCard key={key} item={{ collection: value, collectionId: key, collectionName: value.name, currentPrice: `${getCurrentCollectionEntryPrice(value)} ZIL`, endTime: '' }} />)
+    }
   </div>
 }
 
